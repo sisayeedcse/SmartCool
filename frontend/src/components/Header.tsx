@@ -92,7 +92,7 @@ export default function Header() {
               ? "bg-[var(--pn)] hover:border-[var(--am)] hover:text-[var(--am)]"
               : "smart-btn-primary"
           }`}
-          title={isDayComplete ? "Simulation finished for the day" : isRunning ? "Pause simulation" : "Resume simulation"}
+          title={isDayComplete ? "Simulation finished for the day" : isRunning ? "Pause simulation (Space)" : "Resume simulation (Space)"}
         >
           {isRunning ? (
             <>

@@ -40,6 +40,8 @@ export default function DashboardPage() {
     selectedRoom,
     settings,
     events,
+    isRunning,
+    setIsRunning,
     toggleAcPower,
     toggleAcMode,
     setRoomForce,
@@ -58,6 +60,35 @@ export default function DashboardPage() {
     totalSmartCo2Kg,
     totalSavedCo2Kg,
   } = useSimulation();
+
+  // Keyboard navigation shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        setIsRunning((prev) => !prev);
+      } else if (e.key >= "1" && e.key <= "9") {
+        const idx = parseInt(e.key, 10) - 1;
+        if (idx < rooms.length) {
+          setSelectedRoomIdx(idx);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [rooms.length, setIsRunning, setSelectedRoomIdx]);
 
   const r = selectedRoom;
   const m = getRoomMetrics(r);
@@ -115,9 +146,19 @@ export default function DashboardPage() {
       {/* 2. Room Selection Chips Bar */}
       <section className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-[var(--mu)] uppercase tracking-wider">
-            Select Room to Monitor & Control
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[var(--mu)] uppercase tracking-wider">
+              Select Room to Monitor & Control
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-[var(--mu)] bg-[var(--pn)] px-2 py-0.5 rounded-md border border-[var(--bd)] font-medium">
+              <span>Keys</span>
+              <kbd className="px-1 py-0.2 bg-[var(--bg)] border border-[var(--bd)] rounded font-mono text-[10px] text-[var(--tx)]">1-4</kbd>
+              <span>switch</span>
+              <span>·</span>
+              <kbd className="px-1 py-0.2 bg-[var(--bg)] border border-[var(--bd)] rounded font-mono text-[10px] text-[var(--tx)]">Space</kbd>
+              <span>pause</span>
+            </span>
+          </div>
           <span className="text-xs text-[var(--mu)]">
             {rooms.length} rooms in facility
           </span>
@@ -138,11 +179,16 @@ export default function DashboardPage() {
                     : "bg-[var(--pn)]/60 border-[var(--bd)] hover:border-[var(--ac)]/50"
                 }`}
               >
-                <span
-                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    room.occ ? "bg-[var(--ac)] animate-pulse" : "bg-[var(--am)]"
-                  }`}
-                />
+                <div className="flex flex-col items-center justify-center shrink-0">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      room.occ ? "bg-[var(--ac)] animate-pulse" : "bg-[var(--am)]"
+                    }`}
+                  />
+                  <span className="text-[9px] font-mono font-bold text-[var(--mu)] mt-0.5">
+                    {idx + 1}
+                  </span>
+                </div>
                 <div>
                   <div className="font-bold text-xs text-[var(--tx)]">{room.name}</div>
                   <div className="text-[11px] text-[var(--mu)]">

@@ -28,7 +28,7 @@ In traditional facilities, AC units are frequently left running continuously acr
 
 ### 🎨 Interactive Live Room Graphic & Controls
 - **Dynamic Animated Room Illustration**: Interactive SVG displaying classroom window with sunlight sheen, wooden door, desks, dynamic student occupants (rendered when occupied), and **animated cool air airflow vents** blowing downwards when cooling is active.
-- **Multi-Room Quick Switching**: Select between **Room 101**, **Room 102**, **Computer Lab 201**, and **Seminar Hall 301** with live status dots, active unit count, and real-time kW draw.
+- **Multi-Room Quick Switching & Hotkeys**: Select between **Room 101**, **Room 102**, **Computer Lab 201**, and **Seminar Hall 301** with live status dots, active unit count, real-time kW draw, and instant keyboard shortcuts (`1`–`4` for rooms, `Space` for pause/resume).
 - **Granular Controls & Override Modes**:
   - Individual AC unit toggles (`Turn ON/OFF` and `Set Auto/Manual`).
   - Room-level quick controls (`AUTO / MANUAL` segmented control, `Mode Toggle`, `All ACs ON/OFF`, and `Reset Room`).
