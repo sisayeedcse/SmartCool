@@ -1,37 +1,101 @@
-import { BookOpen } from "lucide-react";
+"use client";
+
+import React from "react";
+import { BookOpen, CheckCircle2, ShieldAlert, Cpu, Flame, Leaf } from "lucide-react";
 
 export default function MethodologyPage() {
   return (
-    <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
-      <section className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-navy-900">Methodology & About</h2>
-        <p className="text-sm text-slate-500">Engineering prototype and research direction, not a proven commercial solution.</p>
-      </section>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-        <h3 className="font-semibold text-navy-900">What SmartCool Is</h3>
-        <p className="text-sm text-slate-700 leading-relaxed">
-          SmartCool is an IoT-inspired energy-efficiency simulation and demonstration platform. It simulates occupancy-aware cooling control strategies and compares them against a conventional baseline using synthetic, reproducible data.
-        </p>
-
-        <h3 className="font-semibold text-navy-900">Simulation Methodology</h3>
-        <p className="text-sm text-slate-700 leading-relaxed">
-          The simulation engine generates deterministic time-series data using a configurable random seed. The same seed and inputs produce identical results, enabling fair strategy comparison. All values are synthetic and clearly labeled throughout the interface.
-        </p>
-
-        <h3 className="font-semibold text-navy-900">What Is Not Validated</h3>
-        <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-          <li>No real ESP32 hardware is connected.</li>
-          <li>No real temperature, humidity, or occupancy sensors are used.</li>
-          <li>No real AC control or electricity metering is performed.</li>
-          <li>Energy savings are estimated from synthetic profiles, not measured.</li>
-          <li>CO2-equivalent reductions require a user-configured emissions factor and are estimates only.</li>
-        </ul>
-
-        <h3 className="font-semibold text-navy-900">Future Integration Plan</h3>
-        <p className="text-sm text-slate-700 leading-relaxed">
-          A clean adapter interface is defined so future ESP32 sensors, PIR or mmWave detectors, temperature/humidity probes, and compatible AC interfaces can supply real readings. Physical experiments would then validate simulated assumptions.
+    <main className="max-w-[1000px] mx-auto p-4 sm:p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--tx)] flex items-center gap-2">
+          <BookOpen className="w-6 h-6 text-[var(--ac)]" />
+          Engineering Methodology & Scientific Model
+        </h1>
+        <p className="text-xs text-[var(--mu)] mt-1">
+          Detailed mathematical formulation, thermodynamic assumptions, and engineering architecture.
         </p>
       </div>
+
+      <section className="smart-card space-y-6 text-xs text-[var(--tx)]">
+        <div>
+          <h2 className="text-sm font-bold text-[var(--ac)] uppercase tracking-wider mb-2">
+            1. Simulation Scope & System Purpose
+          </h2>
+          <p className="leading-relaxed text-[var(--tx)]/90">
+            SmartCool is an occupancy-aware cooling control platform engineered to eliminate wasted energy in educational and commercial facilities. By continuously monitoring room occupancy via simulated PIR sensors and confirming vacancy through an auditable grace period, the system turns off compressors during lecture breaks and empty periods, without sacrificing occupant thermal comfort.
+          </p>
+        </div>
+
+        <div className="border-t border-[var(--bd)] pt-4">
+          <h2 className="text-sm font-bold text-[var(--ac)] uppercase tracking-wider mb-2">
+            2. Thermodynamic Physics & Power Formulas
+          </h2>
+          <div className="space-y-3 leading-relaxed">
+            <p>
+              In our simulation engine, room temperature T and AC power P are modeled dynamically at 1-minute discrete intervals:
+            </p>
+            <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] font-mono space-y-2 text-[11px]">
+              <div>
+                <b className="text-[var(--ac)]">Compressor Power Function:</b>
+                <br />
+                P(t) = clamp(0.8 + (T(t) - T_set) * 0.1 + 0.05 * sin(...), 0.8, 1.4) kW
+              </div>
+              <div>
+                <b className="text-[var(--ac)]">Room Heat Dissipation & Cooling:</b>
+                <br />
+                When AC units are ON: T(t+1) = T(t) + (T_target - T(t)) * 0.05 * (k / N) + ...
+                <br />
+                When AC units are OFF: T(t+1) = T(t) + (T_ambient - T(t)) * 0.02
+                <br />
+                (T_ambient = 31 °C if occupied, 30.5 °C if empty)
+              </div>
+              <div>
+                <b className="text-[var(--ac)]">Energy Integration:</b>
+                <br />
+                E_cumulative += sum(P_i / 60) kWh
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-[var(--bd)] pt-4">
+          <h2 className="text-sm font-bold text-[var(--ac)] uppercase tracking-wider mb-2">
+            3. State Machine & Vacancy Confirmation
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
+              <span className="font-semibold text-[var(--ac)]">Motion Detection</span>
+              <p className="text-[var(--mu)]">
+                PIR sensor detects motion event &rarr; Instant transition to OCCUPIED state &rarr; AC compressor engages immediately &rarr; Vacancy counter reset to 0.
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
+              <span className="font-semibold text-[var(--am)]">Vacancy Confirmation</span>
+              <p className="text-[var(--mu)]">
+                When room becomes empty, a vacancy counter tracks minutes without motion. When elapsed minutes &gt;= Timeout (default 5 min), AC automatically powers down.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-[var(--bd)] pt-4">
+          <h2 className="text-sm font-bold text-[var(--ac)] uppercase tracking-wider mb-2">
+            4. Scientific Transparency & Limitations
+          </h2>
+          <ul className="list-disc pl-5 space-y-1.5 text-[var(--mu)]">
+            <li>
+              All metrics on this dashboard are generated by deterministic mathematical models. No physical ESP32 or DHT22 sensors are connected in this environment.
+            </li>
+            <li>
+              Actual electricity savings in physical buildings depend on building insulation (R-value), sun exposure, window glazing, inverter compressor ramp profiles, and user compliance.
+            </li>
+            <li>
+              Emissions avoidance calculations depend on the local electrical generation mix (gas, coal, hydro, solar) and use an assumed factor of 0.696 kg CO2e/kWh.
+            </li>
+          </ul>
+        </div>
+      </section>
     </main>
   );
 }

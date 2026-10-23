@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import { SimulationProvider } from "../context/SimulationContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "SmartCool — Occupancy-Aware Cooling Simulation",
-  description: "Research-grade simulation platform for energy-efficient cooling control.",
+  title: "SmartCool Energy Saver — Multi-Room Cooling Simulation",
+  description: "Modern energy-efficiency multi-room cooling control and simulation suite.",
 };
-
-import Sidebar from "../components/Sidebar";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable}`}>
-      <body className="min-h-screen bg-slate-50 text-slate-900 flex">
-        <Sidebar />
-        <div className="flex-1 min-w-0">{children}</div>
+    <html lang="en" className={`${inter.variable}`} data-theme="dark">
+      <body className="min-h-screen flex flex-col antialiased">
+        <SimulationProvider>
+          <Header />
+          <div className="flex-1 flex min-w-0">
+            <Sidebar />
+            <div className="flex-1 min-w-0 bg-[var(--bg)] min-h-[calc(100vh-65px)]">
+              {children}
+            </div>
+          </div>
+        </SimulationProvider>
       </body>
     </html>
   );

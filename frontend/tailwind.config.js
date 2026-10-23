@@ -4,12 +4,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        app: {
+          bg: 'var(--bg)',
+          card: 'var(--pn)',
+          border: 'var(--bd)',
+          text: 'var(--tx)',
+          muted: 'var(--mu)',
+          accent: 'var(--ac)',
+          blue: 'var(--bl)',
+          red: 'var(--rd)',
+          amber: 'var(--am)',
+          save: 'var(--sv)',
+          saveText: 'var(--svt)',
+        },
         navy: { 900: '#0a192f', 800: '#112240', 700: '#233554' },
         teal: { 400: '#64ffda', 500: '#5eead4' },
-        slate: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Segoe UI', 'system-ui', '-apple-system', 'sans-serif'],
       },
     },
   },

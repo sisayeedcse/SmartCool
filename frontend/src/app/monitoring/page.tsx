@@ -1,35 +1,160 @@
-import { Waves } from "lucide-react";
+"use client";
+
+import React, { useState } from "react";
+import { useSimulation, formatNum } from "../../context/SimulationContext";
+import { Waves, Power, Sliders, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function MonitoringPage() {
+  const { rooms, toggleAcPower, toggleAcMode, settings } = useSimulation();
+  const [filterRoom, setFilterRoom] = useState<string>("all");
+
+  const filteredRooms =
+    filterRoom === "all"
+      ? rooms
+      : rooms.filter((r) => r.name === filterRoom);
+
   return (
-    <main className="max-w-7xl mx-auto px-6 py-10 space-y-6">
-      <section className="space-y-1">
-        <h2 className="text-3xl font-bold tracking-tight text-navy-900">Room Monitoring</h2>
-        <p className="text-sm text-slate-500">Simulated sensor readings and control events for demonstration.</p>
+    <main className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-6">
+      {/* Header */}
+      <section className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--tx)] flex items-center gap-2">
+            <Waves className="w-6 h-6 text-[var(--ac)]" />
+            Live Data – All Rooms & AC Units
+          </h1>
+          <p className="text-xs text-[var(--mu)] mt-1">
+            Real-time status, thermal readings, vacancy timers, and individual unit switches.
+          </p>
+        </div>
+
+        {/* Room Filter Dropdown */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="room-filter" className="text-xs text-[var(--mu)] font-medium">
+            Filter Room:
+          </label>
+          <select
+            id="room-filter"
+            value={filterRoom}
+            onChange={(e) => setFilterRoom(e.target.value)}
+            className="bg-[var(--pn)] border border-[var(--bd)] text-xs rounded-lg px-3 py-1.5 text-[var(--tx)] focus:outline-none focus:border-[var(--ac)]"
+          >
+            <option value="all">All Rooms ({rooms.length})</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.name}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </section>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
-          <Waves className="w-4 h-4" /> Simulation Badge — Not Physical Sensors
+
+      {/* Main Table Card */}
+      <section className="smart-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--bd)] bg-[var(--bg)]/50 text-[var(--mu)] uppercase tracking-wider font-semibold">
+                <th className="py-3 px-4">Room</th>
+                <th className="py-3 px-3">AC Unit</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3">Mode</th>
+                <th className="py-3 px-3">Power Draw</th>
+                <th className="py-3 px-3">Room Temp</th>
+                <th className="py-3 px-3">Occupancy</th>
+                <th className="py-3 px-3">Vacancy Timer</th>
+                <th className="py-3 px-4 text-right">Controls</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--bd)] text-[var(--tx)]">
+              {filteredRooms.map((r, roomIndex) => {
+                const originalRoomIdx = rooms.findIndex((orig) => orig.id === r.id);
+
+                return r.acs.map((ac, acIdx) => (
+                  <tr
+                    key={`${r.id}-${ac.n}`}
+                    className="hover:bg-[var(--bg)]/30 transition-colors"
+                  >
+                    <td className="py-3 px-4 font-semibold text-[var(--tx)]">
+                      {r.name}
+                    </td>
+                    <td className="py-3 px-3 font-mono font-medium">{ac.n}</td>
+                    <td className="py-3 px-3">
+                      <span className={ac.on ? "badge-ok" : "badge-off"}>
+                        {ac.on ? "ON" : "OFF"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`capitalize font-medium ${
+                          ac.mode === "auto" ? "text-[var(--ac)]" : "text-[var(--am)]"
+                        }`}
+                      >
+                        {ac.mode}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-mono">
+                      {formatNum(ac.p, 2)} kW
+                    </td>
+                    <td className="py-3 px-3 font-mono">
+                      {formatNum(r.temp, 1)} °C
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 font-medium ${
+                          r.occ ? "text-[var(--ac)]" : "text-[var(--mu)]"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            r.occ ? "bg-[var(--ac)] animate-pulse" : "bg-[var(--mu)]"
+                          }`}
+                        />
+                        {r.occ ? "Occupied" : "Vacant"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-mono text-[var(--mu)]">
+                      {String(r.vac).padStart(2, "0")}:00 / {String(settings.vac).padStart(2, "0")}:00
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="inline-flex gap-2">
+                        <button
+                          onClick={() => toggleAcPower(originalRoomIdx, acIdx)}
+                          className={`smart-btn text-[11px] py-1 px-2.5 ${
+                            ac.on
+                              ? "hover:border-[var(--rd)] hover:text-[var(--rd)]"
+                              : "smart-btn-primary"
+                          }`}
+                        >
+                          <Power className="w-3 h-3" />
+                          <span>Turn {ac.on ? "off" : "on"}</span>
+                        </button>
+                        <button
+                          onClick={() => toggleAcMode(originalRoomIdx, acIdx)}
+                          className="smart-btn text-[11px] py-1 px-2.5"
+                        >
+                          <Sliders className="w-3 h-3" />
+                          <span>Set {ac.mode === "auto" ? "manual" : "auto"}</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ));
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-            <div className="text-xs text-slate-400 mb-1">Occupancy</div>
-            <div className="text-xl font-semibold text-emerald-700">Occupied</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-            <div className="text-xs text-slate-400 mb-1">Temperature</div>
-            <div className="text-xl font-semibold text-navy-900">26.3 °C</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-            <div className="text-xs text-slate-400 mb-1">Humidity</div>
-            <div className="text-xl font-semibold text-navy-900">58 %</div>
-          </div>
+      </section>
+
+      {/* Notice info */}
+      <section className="p-4 rounded-xl bg-amber-900/20 border border-amber-800/40 text-xs text-amber-200/90 flex items-start gap-3">
+        <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="font-semibold text-amber-300">Live Simulation Note</p>
+          <p>
+            Data is driven by the internal thermodynamic simulation engine in real-time. Manual controls override automatic schedules until reset or set back to Auto mode.
+          </p>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 space-y-1">
-          <p className="font-semibold">Important Note</p>
-          <p>This page displays simulated readings only. No physical ESP32, temperature/humidity sensor, or PIR sensor is connected. Future hardware integration will require a separate adapter interface.</p>
-        </div>
-      </div>
+      </section>
     </main>
   );
 }

@@ -162,3 +162,35 @@ def reset_simulation(sim_id: int, admin_token: Optional[str] = None):
     db.commit()
     db.close()
     return {"id": sim_id, "status": "reset"}
+
+
+@app.get("/api/rooms/defaults")
+def get_default_rooms():
+    return {
+        "rooms": [
+            {"id": "rm-101", "name": "Room 101", "ac_count": 2, "schedule_key": "A", "schedule_name": "4 lectures"},
+            {"id": "rm-102", "name": "Room 102", "ac_count": 1, "schedule_key": "B", "schedule_name": "3 lectures (no 10:00)"},
+            {"id": "rm-201", "name": "Computer Lab 201", "ac_count": 3, "schedule_key": "C", "schedule_name": "3 lectures (no 9:00)"},
+            {"id": "rm-301", "name": "Seminar Hall 301", "ac_count": 2, "schedule_key": "D", "schedule_name": "3 lectures (no 11:00)"},
+        ],
+        "schedules": {
+            "A": {"name": "4 lectures", "intervals": [[540, 585], [600, 645], [660, 705], [735, 780]]},
+            "B": {"name": "3 lectures (no 10:00)", "intervals": [[540, 585], [660, 705], [735, 780]]},
+            "C": {"name": "3 lectures (no 9:00)", "intervals": [[600, 645], [660, 705], [735, 780]]},
+            "D": {"name": "3 lectures (no 11:00)", "intervals": [[540, 585], [600, 645], [735, 780]]},
+        }
+    }
+
+
+@app.get("/api/settings/defaults")
+def get_default_settings():
+    return {
+        "tariff_bdt_per_kwh": 10.0,
+        "emissions_factor_kg_per_kwh": 0.696,
+        "vacancy_timeout_min": 5,
+        "temperature_setpoint_c": 24.0,
+        "simulation_speed_ms": 1500,
+        "start_minute": 540,  # 9:00 AM
+        "end_minute": 900,    # 3:00 PM
+    }
+

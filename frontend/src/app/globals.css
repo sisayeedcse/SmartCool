@@ -2,8 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: #06141f;
+  --pn: #0b2230;
+  --bd: #17394b;
+  --tx: #e8f3f5;
+  --mu: #8fb0bb;
+  --ac: #2ee6a0;
+  --bl: #3b82f6;
+  --rd: #ff6b5b;
+  --am: #f5b942;
+  --sv: #c9f7e4;
+  --svt: #073b2b;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #eaf3f6;
+  --pn: #ffffff;
+  --bd: #cfe0e6;
+  --tx: #10303c;
+  --mu: #5a7a86;
+  --ac: #0fa36b;
+  --bl: #2563eb;
+  --rd: #d9442f;
+  --am: #b7791f;
+  --sv: #d5f5e8;
+  --svt: #064e36;
+  color-scheme: light;
+}
+
 @layer base {
-  html { scroll-behavior: smooth; }
-  body { @apply bg-slate-50 text-slate-900 font-sans antialiased; }
-  ::selection { @apply bg-teal-400/30; }
+  html {
+    scroll-behavior: smooth;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--tx);
+    font-family: var(--font-inter), "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  ::selection {
+    background-color: rgba(46, 230, 160, 0.3);
+  }
+}
+
+@layer components {
+  .smart-card {
+    background-color: var(--pn);
+    border: 1px solid var(--bd);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .smart-btn {
+    border: 1px solid var(--bd);
+    background-color: var(--pn);
+    color: var(--tx);
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+  }
+  .smart-btn:hover:not(:disabled) {
+    border-color: var(--ac);
+    color: var(--ac);
+  }
+  .smart-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .smart-btn-primary {
+    background-color: var(--ac);
+    color: #04251a;
+    border-color: var(--ac);
+    font-weight: 600;
+  }
+  .smart-btn-primary:hover:not(:disabled) {
+    opacity: 0.92;
+    color: #04251a;
+  }
+
+  .badge-ok {
+    background-color: #0f6b4a;
+    color: #d8ffee;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .badge-warn {
+    background-color: #8a5a10;
+    color: #fff3d6;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .badge-off {
+    background-color: #5b3a3a;
+    color: #ffe0dc;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .badge-cool {
+    background-color: #1d4f9a;
+    color: #e3efff;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  /* Cool air animation */
+  @keyframes cool-airflow {
+    0% {
+      opacity: 0.15;
+      transform: translateY(0) scaleY(0.9);
+    }
+    50% {
+      opacity: 0.75;
+      transform: translateY(3px) scaleY(1.05);
+    }
+    100% {
+      opacity: 0.15;
+      transform: translateY(0) scaleY(0.9);
+    }
+  }
+
+  .animate-airflow {
+    animation: cool-airflow 1.8s ease-in-out infinite;
+  }
 }

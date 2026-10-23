@@ -1,75 +1,596 @@
-import { Thermometer, Droplets, Zap, TrendingDown, Clock, ShieldAlert, CheckCircle2 } from "lucide-react";
+"use client";
 
-export default function HomePage() {
+import React from "react";
+import Link from "next/link";
+import {
+  useSimulation,
+  formatNum,
+  formatDuration,
+  formatTimeShort,
+  TE,
+  T0,
+} from "../context/SimulationContext";
+import RoomIllustration from "../components/RoomIllustration";
+import {
+  TemperatureTrendChart,
+  EnergyComparisonChart,
+  ActivityTimeline,
+  ComparisonBars,
+  SavingsCard,
+} from "../components/Charts";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Power,
+  Sliders,
+  CheckCircle2,
+  Clock,
+  Thermometer,
+  Zap,
+  Activity,
+  ChevronRight,
+  Radio,
+} from "lucide-react";
+
+export default function DashboardPage() {
+  const {
+    rooms,
+    selectedRoomIdx,
+    setSelectedRoomIdx,
+    selectedRoom,
+    settings,
+    events,
+    toggleAcPower,
+    toggleAcMode,
+    setRoomForce,
+    getRoomMetrics,
+    getRoomPower,
+    totalRooms,
+    occupiedRooms,
+    totalAcs,
+    onAcs,
+    totalPowerKw,
+    totalSmartEnergyKwh,
+    totalNormalEnergyKwh,
+    totalSavedEnergyKwh,
+    totalSmartCostBdt,
+    totalSavedCostBdt,
+    totalSmartCo2Kg,
+    totalSavedCo2Kg,
+  } = useSimulation();
+
+  const r = selectedRoom;
+  const m = getRoomMetrics(r);
+  const roomPower = getRoomPower(r);
+  const runtimePct = Math.min(100, Math.round((100 * r.run) / (TE - T0)));
+
+  // Temperature status tag
+  const tempStatus =
+    r.temp < 23
+      ? { label: "Cool", cls: "badge-cool" }
+      : r.temp > 26.5
+      ? { label: "Warm", cls: "badge-warn" }
+      : { label: "Comfortable", cls: "badge-ok" };
+
+  // Filter recent events for this room
+  const recentEvents = events
+    .filter((e) => e.room === r.name)
+    .slice(0, 7);
+
   return (
-    <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
-      <section className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-navy-900">Overview</h2>
-        <p className="text-slate-500 text-sm">Simulation-only dashboard for research demonstration. All data is synthetic.</p>
+    <main className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-5">
+      {/* 1. Global Multi-Room Summary KPIs */}
+      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <SummaryCard
+          title="Rooms"
+          main={`${totalRooms}`}
+          sub={`${occupiedRooms} occupied now`}
+          highlight={occupiedRooms > 0}
+        />
+        <SummaryCard
+          title="AC units on"
+          main={`${onAcs} / ${totalAcs}`}
+          sub={`${formatNum(totalPowerKw, 2)} kW current draw`}
+          highlight={onAcs > 0}
+        />
+        <SummaryCard
+          title="Energy today"
+          main={`${formatNum(totalSmartEnergyKwh, 2)} kWh`}
+          sub={`Normal AC: ${formatNum(totalNormalEnergyKwh, 2)} kWh`}
+        />
+        <SummaryCard
+          title="Cost today"
+          main={`৳ ${formatNum(totalSmartCostBdt, 2)}`}
+          sub={`Saved ৳ ${formatNum(totalSavedCostBdt, 2)}`}
+          badge={`-${formatNum(m.pct, 0)}%`}
+        />
+        <SummaryCard
+          title="CO₂e today"
+          main={`${formatNum(totalSmartCo2Kg, 2)} kg`}
+          sub={`Avoided ${formatNum(totalSavedCo2Kg, 2)} kg`}
+          highlightGreen
+        />
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card title="Temperature" value="26.3 °C" icon={<Thermometer className="w-5 h-5 text-teal-500" />} label="Simulated" />
-        <Card title="Humidity" value="58 %" icon={<Droplets className="w-5 h-5 text-teal-500" />} label="Simulated" />
-        <Card title="AC Power" value="2.5 kW" icon={<Zap className="w-5 h-5 text-teal-500" />} label="Est. profile" />
-        <Card title="Savings" value="18.4 %" icon={<TrendingDown className="w-5 h-5 text-teal-500" />} label="Estimated" />
+      {/* 2. Room Selection Chips Bar */}
+      <section className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-[var(--mu)] uppercase tracking-wider">
+            Select Room to Monitor & Control
+          </span>
+          <span className="text-xs text-[var(--mu)]">
+            {rooms.length} rooms in facility
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2.5 pb-1">
+          {rooms.map((room, idx) => {
+            const isSelected = idx === selectedRoomIdx;
+            const onUnits = room.acs.filter((a) => a.on).length;
+            const pwr = getRoomPower(room);
+
+            return (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoomIdx(idx)}
+                className={`text-left px-3.5 py-2.5 rounded-xl border transition-all flex items-center gap-3 ${
+                  isSelected
+                    ? "bg-[var(--pn)] border-[var(--ac)] shadow-sm ring-1 ring-[var(--ac)]"
+                    : "bg-[var(--pn)]/60 border-[var(--bd)] hover:border-[var(--ac)]/50"
+                }`}
+              >
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                    room.occ ? "bg-[var(--ac)] animate-pulse" : "bg-[var(--am)]"
+                  }`}
+                />
+                <div>
+                  <div className="font-bold text-xs text-[var(--tx)]">{room.name}</div>
+                  <div className="text-[11px] text-[var(--mu)]">
+                    {onUnits}/{room.acs.length} AC on · {formatNum(pwr, 2)} kW
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 3. Main Dashboard Grid */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* Row 1, Left: Live Room Status & AC Controls (span 7) */}
+        <section className="smart-card col-span-12 lg:col-span-7 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2.5">
+              <div className="flex items-center gap-2">
+                <Radio className="w-4 h-4 text-[var(--ac)]" />
+                <h2 className="text-sm font-bold text-[var(--tx)]">
+                  Live Room Status – {r.name}
+                </h2>
+              </div>
+              <span className="text-xs text-[var(--mu)]">
+                {r.acs.length} cooling unit{r.acs.length > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {/* Illustration & status cards */}
+            <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-4">
+              <RoomIllustration room={r} />
+
+              <div className="grid grid-cols-2 gap-2 content-start">
+                <StatusMiniCard
+                  label="Temperature"
+                  val={`${formatNum(r.temp, 1)} °C`}
+                  badge={<span className={tempStatus.cls}>{tempStatus.label}</span>}
+                />
+                <StatusMiniCard
+                  label="Occupancy"
+                  val={r.occ ? "Occupied" : "Vacant"}
+                  sub={r.occ ? "Motion detected" : "No motion"}
+                  ok={r.occ}
+                />
+                <StatusMiniCard
+                  label="AC status"
+                  val={`${r.acs.filter((a) => a.on).length} of ${r.acs.length} ON`}
+                  sub="Auto vacancy control"
+                />
+                <StatusMiniCard
+                  label="Current power"
+                  val={`${formatNum(roomPower, 2)} kW`}
+                  sub="0.8 – 1.4 kW per AC"
+                />
+              </div>
+            </div>
+
+            {/* Sensor Simulation controls */}
+            <div className="mt-4 pt-3 border-t border-[var(--bd)] flex flex-wrap items-center gap-2 text-xs text-[var(--mu)]">
+              <span className="font-semibold text-[var(--tx)]">Simulate sensor:</span>
+              <button
+                onClick={() => setRoomForce(selectedRoomIdx, null)}
+                className={`smart-btn text-xs py-1 px-2.5 ${
+                  r.force === null ? "smart-btn-primary" : ""
+                }`}
+              >
+                Follow schedule
+              </button>
+              <button
+                onClick={() => setRoomForce(selectedRoomIdx, true)}
+                className={`smart-btn text-xs py-1 px-2.5 ${
+                  r.force === true ? "smart-btn-primary" : ""
+                }`}
+              >
+                Force occupied
+              </button>
+              <button
+                onClick={() => setRoomForce(selectedRoomIdx, false)}
+                className={`smart-btn text-xs py-1 px-2.5 ${
+                  r.force === false ? "smart-btn-primary" : ""
+                }`}
+              >
+                Force vacant
+              </button>
+            </div>
+          </div>
+
+          {/* AC Units in this room */}
+          <div className="mt-4">
+            <div className="text-xs font-semibold text-[var(--mu)] uppercase tracking-wider mb-2">
+              Individual Unit Controls
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {r.acs.map((ac, acIdx) => (
+                <div
+                  key={ac.n}
+                  className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--bd)] flex flex-col justify-between space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-[var(--tx)]">{ac.n}</span>
+                    <span className={ac.on ? "badge-ok" : "badge-off"}>
+                      {ac.on ? "ON" : "OFF"}
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] text-[var(--mu)]">
+                    {formatNum(ac.p, 2)} kW ·{" "}
+                    <span className="capitalize">{ac.mode}</span>
+                  </div>
+
+                  <div className="flex gap-1.5 pt-1">
+                    <button
+                      onClick={() => toggleAcPower(selectedRoomIdx, acIdx)}
+                      className={`flex-1 text-[11px] py-1 px-2 rounded font-medium border border-[var(--bd)] transition-all ${
+                        ac.on
+                          ? "bg-[var(--pn)] text-[var(--tx)] hover:border-[var(--rd)] hover:text-[var(--rd)]"
+                          : "bg-[var(--ac)] text-[#04251a] font-semibold"
+                      }`}
+                    >
+                      Turn {ac.on ? "off" : "on"}
+                    </button>
+                    <button
+                      onClick={() => toggleAcMode(selectedRoomIdx, acIdx)}
+                      className="text-[11px] py-1 px-2 rounded bg-[var(--pn)] text-[var(--mu)] hover:text-[var(--tx)] border border-[var(--bd)] hover:border-[var(--ac)]"
+                      title="Switch between automatic schedule/sensor mode and manual override"
+                    >
+                      {ac.mode === "auto" ? "Manual" : "Auto"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Row 1, Right: Event Summary (Today) (span 5) */}
+        <section className="smart-card col-span-12 lg:col-span-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2.5">
+              <h2 className="text-sm font-bold text-[var(--tx)]">
+                Event summary (today) – {r.name}
+              </h2>
+              <span className="text-xs text-[var(--mu)]">Cumulative metrics</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
+                <span className="text-xs text-[var(--mu)] block">Total runtime</span>
+                <b className="text-xl font-bold text-[var(--tx)] block font-mono">
+                  {formatDuration(r.run)}
+                </b>
+                <div className="w-full bg-[var(--pn)] h-2 rounded-full overflow-hidden border border-[var(--bd)]">
+                  <div
+                    className="h-full bg-[var(--ac)] transition-all"
+                    style={{ width: `${runtimePct}%` }}
+                  />
+                </div>
+                <div className="text-[11px] text-[var(--mu)] flex justify-between">
+                  <span>out of 6 hours</span>
+                  <span className="font-semibold text-[var(--tx)]">{runtimePct}%</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
+                <span className="text-xs text-[var(--mu)] block">Energy consumed</span>
+                <b className="text-xl font-bold text-[var(--tx)] block font-mono">
+                  {formatNum(r.e)} kWh
+                </b>
+                <DeltaBadge pct={m.pct} />
+                <span className="text-[11px] text-[var(--mu)] block">
+                  Normal AC: {formatNum(r.en)} kWh
+                </span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
+                <span className="text-xs text-[var(--mu)] block">Estimated cost</span>
+                <b className="text-xl font-bold text-[var(--tx)] block font-mono">
+                  ৳ {formatNum(m.cost)}
+                </b>
+                <DeltaBadge pct={m.pct} />
+                <span className="text-[11px] text-[var(--mu)] block">
+                  at ৳{settings.tariff}/kWh
+                </span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
+                <span className="text-xs text-[var(--mu)] block">CO₂e emissions</span>
+                <b className="text-xl font-bold text-[var(--tx)] block font-mono">
+                  {formatNum(m.co2)} kg
+                </b>
+                <DeltaBadge pct={m.pct} />
+                <span className="text-[11px] text-[var(--mu)] block">
+                  at {settings.ef} kg/kWh
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-[var(--bd)] flex items-center justify-between text-xs text-[var(--mu)]">
+            <span>Energy profile: 0.8–1.4 kW thermal dynamic</span>
+            <Link
+              href="/analytics"
+              className="text-[var(--ac)] hover:underline inline-flex items-center gap-1 font-semibold"
+            >
+              Detailed Analytics <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </section>
+
+        {/* Row 2: 3 Columns (4 cols each) */}
+        {/* Col 1: Temperature Trend */}
+        <section className="smart-card col-span-12 md:col-span-6 lg:col-span-4">
+          <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2">
+            <h3 className="text-xs font-bold text-[var(--tx)] uppercase tracking-wider">
+              Temperature Trend – {r.name}
+            </h3>
+            <span className="text-xs font-mono text-[var(--ac)]">
+              {formatNum(r.temp, 1)}°C
+            </span>
+          </div>
+          <TemperatureTrendChart room={r} />
+        </section>
+
+        {/* Col 2: Energy Consumption Comparison */}
+        <section className="smart-card col-span-12 md:col-span-6 lg:col-span-4">
+          <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2">
+            <h3 className="text-xs font-bold text-[var(--tx)] uppercase tracking-wider">
+              Energy Comparison (Cumulative)
+            </h3>
+            <span className="text-xs font-mono text-[var(--tx)]">
+              {formatNum(r.e)} / {formatNum(r.en)} kWh
+            </span>
+          </div>
+          <EnergyComparisonChart room={r} />
+        </section>
+
+        {/* Col 3: Room Activity Timeline */}
+        <section className="smart-card col-span-12 lg:col-span-4">
+          <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2">
+            <h3 className="text-xs font-bold text-[var(--tx)] uppercase tracking-wider">
+              Room Activity Timeline
+            </h3>
+            <span className="text-xs text-[var(--mu)]">Daily schedule</span>
+          </div>
+          <ActivityTimeline room={r} />
+        </section>
+
+        {/* Row 3: Energy & Cost Analysis (span 7) & Recent Events (span 5) */}
+        <section className="smart-card col-span-12 lg:col-span-7">
+          <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2">
+            <h3 className="text-xs font-bold text-[var(--tx)] uppercase tracking-wider">
+              Energy & Cost Analysis – {r.name}
+            </h3>
+            <span className="text-xs text-[var(--ac)] font-semibold">
+              {formatNum(m.pct, 1)}% Energy Reduction
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--bd)] flex flex-col justify-between">
+              <span className="text-xs font-semibold text-[var(--mu)] block mb-1">
+                Electricity (kWh)
+              </span>
+              <ComparisonBars
+                normalVal={r.en}
+                smartVal={r.e}
+                formatDecimals={2}
+              />
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--bd)] flex flex-col justify-between">
+              <span className="text-xs font-semibold text-[var(--mu)] block mb-1">
+                Estimated Cost (৳)
+              </span>
+              <ComparisonBars
+                normalVal={m.cn}
+                smartVal={m.cost}
+                formatDecimals={2}
+              />
+            </div>
+
+            <SavingsCard
+              savedKwh={m.sv}
+              savedPct={m.pct}
+              savedCostBdt={m.sv * settings.tariff}
+              avoidedCo2Kg={m.sv * settings.ef}
+              tariff={settings.tariff}
+              ef={settings.ef}
+            />
+          </div>
+        </section>
+
+        <section className="smart-card col-span-12 lg:col-span-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2">
+              <h3 className="text-xs font-bold text-[var(--tx)] uppercase tracking-wider">
+                Recent Events – {r.name}
+              </h3>
+              <Link
+                href="/events"
+                className="text-xs text-[var(--ac)] hover:underline font-semibold"
+              >
+                View all ({events.length})
+              </Link>
+            </div>
+
+            <div className="space-y-2">
+              {recentEvents.length > 0 ? (
+                recentEvents.map((evt) => (
+                  <div
+                    key={evt.id}
+                    className="flex items-start gap-2.5 text-xs py-1 border-b border-[var(--bd)]/40 last:border-0"
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full mt-1 shrink-0 ${
+                        evt.ty === "off"
+                          ? "bg-[var(--rd)]"
+                          : evt.ty === "info"
+                          ? "bg-[var(--am)]"
+                          : "bg-[var(--ac)]"
+                      }`}
+                    />
+                    <time className="font-mono text-[var(--mu)] shrink-0 w-11">
+                      {formatTimeShort(evt.t)}
+                    </time>
+                    <span className="text-[var(--tx)] leading-tight">{evt.m}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-[var(--mu)] py-4 text-center">
+                  No events recorded yet for this room.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[var(--bd)]">
+            <Link
+              href="/events"
+              className="smart-btn w-full text-center text-xs justify-center"
+            >
+              Browse Complete System Log
+            </Link>
+          </div>
+        </section>
       </div>
 
-      <section className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-navy-900">Energy Performance</h3>
-            <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">Synthetic results</span>
-          </div>
-          <div className="space-y-3">
-            <MetricRow label="Baseline Energy" value="14.2 kWh" />
-            <MetricRow label="SmartCool Energy" value="11.6 kWh" />
-            <MetricRow label="Net Savings" value="2.6 kWh" accent={true} />
-            <MetricRow label="Bill Savings (est.)" value="22.10 BDT" />
-            <MetricRow label="Emissions Factor" value="Not configured" muted={true} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <h3 className="font-semibold text-navy-900">System Status</h3>
-          <StatusRow icon={<CheckCircle2 className="w-4 h-4 text-emerald-500" />} label="Simulation Engine" value="Active" />
-          <StatusRow icon={<ShieldAlert className="w-4 h-4 text-amber-500" />} label="Sensor Health" value="OK (simulated)" />
-          <StatusRow icon={<Clock className="w-4 h-4 text-blue-500" />} label="Current State" value="OCCUPIED" />
-          <StatusRow icon={<Zap className="w-4 h-4 text-rose-500" />} label="Emissions Report" value="Unavailable" muted={true} />
-        </div>
-      </section>
+      {/* Footer disclaimer note (from reference HTML) */}
+      <footer className="pt-4 border-t border-[var(--bd)] text-xs text-[var(--mu)] flex flex-wrap gap-4 items-center justify-between">
+        <span>
+          Note: This dashboard shows data from a simulated multi-room environment. Actual energy use and emissions vary with real AC specifications and conditions.
+        </span>
+        <span className="font-semibold text-[var(--ac)]">
+          Save energy · Reduce emissions · Build a sustainable future
+        </span>
+      </footer>
     </main>
   );
 }
 
-function Card({ title, value, icon, label }: { title: string; value: string; icon: React.ReactNode; label: string }) {
+function SummaryCard({
+  title,
+  main,
+  sub,
+  highlight,
+  highlightGreen,
+  badge,
+}: {
+  title: string;
+  main: string;
+  sub: string;
+  highlight?: boolean;
+  highlightGreen?: boolean;
+  badge?: string;
+}) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <h4 className="text-sm font-medium text-slate-500">{title}</h4>
-        {icon}
+    <div className="smart-card space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-[var(--mu)] font-medium">{title}</span>
+        {badge && (
+          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[var(--ac)]/15 text-[var(--ac)]">
+            {badge}
+          </span>
+        )}
       </div>
-      <div className="text-2xl font-bold text-navy-900">{value}</div>
-      <div className="text-[11px] text-slate-400 mt-1">{label}</div>
+      <b
+        className={`text-2xl font-bold block tracking-tight ${
+          highlightGreen
+            ? "text-[var(--ac)]"
+            : highlight
+            ? "text-[var(--tx)]"
+            : "text-[var(--tx)]"
+        }`}
+      >
+        {main}
+      </b>
+      <span className="text-[11px] text-[var(--mu)] block truncate">{sub}</span>
     </div>
   );
 }
 
-function MetricRow({ label, value, accent, muted }: { label: string; value: string; accent?: boolean; muted?: boolean }) {
+function StatusMiniCard({
+  label,
+  val,
+  sub,
+  badge,
+  ok,
+}: {
+  label: string;
+  val: string;
+  sub?: string;
+  badge?: React.ReactNode;
+  ok?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className={muted ? "text-slate-400" : "text-slate-600"}>{label}</span>
-      <span className={`font-semibold ${accent ? "text-emerald-700" : muted ? "text-slate-400" : "text-slate-900"}`}>{value}</span>
+    <div className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1">
+      <span className="text-[11px] text-[var(--mu)] block font-medium">{label}</span>
+      <div className="flex items-center justify-between gap-1">
+        <b
+          className={`text-sm font-bold truncate ${
+            ok === true
+              ? "text-[var(--ac)]"
+              : ok === false
+              ? "text-[var(--mu)]"
+              : "text-[var(--tx)]"
+          }`}
+        >
+          {val}
+        </b>
+        {badge}
+      </div>
+      {sub && <span className="text-[10px] text-[var(--mu)] block truncate">{sub}</span>}
     </div>
   );
 }
 
-function StatusRow({ icon, label, value, muted }: { icon: React.ReactNode; label: string; value: string; muted?: boolean }) {
+function DeltaBadge({ pct }: { pct: number }) {
+  const isGood = pct >= 0;
   return (
-    <div className="flex items-center gap-3 text-sm">
-      <span>{icon}</span>
-      <span className={`flex-1 ${muted ? "text-slate-400" : "text-slate-600"}`}>{label}</span>
-      <span className={`text-xs font-medium ${muted ? "text-slate-400" : "text-slate-900"}`}>{value}</span>
+    <div
+      className={`text-xs font-semibold flex items-center gap-1 ${
+        isGood ? "text-[var(--ac)]" : "text-[var(--rd)]"
+      }`}
+    >
+      {isGood ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+      <span>{formatNum(Math.abs(pct), 1)}%</span>
+      <span className="text-[10px] text-[var(--mu)] font-normal">vs. normal</span>
     </div>
   );
 }
