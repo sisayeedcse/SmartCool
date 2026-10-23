@@ -21,6 +21,7 @@ class Config:
     sensor_fault_prob: float = 0.02
     ac_power_kw: float = 2.5
     controller_power_kw: float = 0.02
+    base_time: Optional[datetime] = None
 
 
 @dataclass
@@ -40,7 +41,8 @@ class Reading:
 def generate_scenario(config: Config) -> List[Reading]:
     random.seed(config.seed)
     readings: List[Reading] = []
-    base_time = datetime(2026, 1, 1, 9, 0, 0)
+    now = datetime.now()
+    base_time = config.base_time or datetime(now.year, now.month, now.day, 9, 0, 0)
     occupancy_schedule = _generate_occupancy_schedule(config)
     current_state = ControlState.OCCUPIED
     vacancy_start: Optional[datetime] = None
