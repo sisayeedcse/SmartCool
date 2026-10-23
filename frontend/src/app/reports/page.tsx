@@ -140,6 +140,8 @@ export default function ReportsPage() {
         </h3>
         <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] font-mono text-[11px] text-[var(--mu)] space-y-1">
           <div>// SmartCool Environment Configuration</div>
+          <div>system_timezone = &quot;Asia/Dhaka (BST, UTC+06:00)&quot;;</div>
+          <div>system_country = &quot;Bangladesh (BD)&quot;;</div>
           <div>tariff_bdt_per_kwh = {settings.tariff};</div>
           <div>emissions_factor_kg_per_kwh = {settings.ef};</div>
           <div>vacancy_timeout_minutes = {settings.vac};</div>

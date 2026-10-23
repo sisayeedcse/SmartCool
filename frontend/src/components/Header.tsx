@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSimulation, formatTimeStr } from "../context/SimulationContext";
-import { Play, Pause, Sun, Moon, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Play, Pause, Sun, Moon, ShieldCheck, CheckCircle2, Clock } from "lucide-react";
 
 export default function Header() {
   const {
@@ -14,6 +14,32 @@ export default function Header() {
     theme,
     toggleTheme,
   } = useSimulation();
+
+  const [bdTime, setBdTime] = useState<{ date: string; time: string } | null>(null);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-GB", {
+        timeZone: "Asia/Dhaka",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      const timeStr = now.toLocaleTimeString("en-US", {
+        timeZone: "Asia/Dhaka",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+      setBdTime({ date: dateStr, time: timeStr });
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-3.5 border-b border-[var(--bd)] bg-[var(--pn)]/80 backdrop-blur sticky top-0 z-30 transition-colors">
@@ -78,9 +104,26 @@ export default function Header() {
           <b className="text-[var(--tx)] font-semibold">{selectedRoom.name}</b>
         </div>
 
-        {/* Simulated date & time */}
-        <div className="px-3 py-1 rounded-full bg-[var(--bg)] border border-[var(--bd)] text-[var(--tx)] font-mono tracking-tight font-semibold">
-          14 Apr 2025 &nbsp;{formatTimeStr(t)}
+        {/* BD System Time (Live Bangladesh Standard Time) */}
+        <div
+          className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg)] border border-[var(--bd)] text-[var(--tx)] font-mono tracking-tight text-xs shadow-sm"
+          title="Current System Time (Bangladesh Standard Time - Asia/Dhaka, UTC+06:00)"
+        >
+          <Clock className="w-3.5 h-3.5 text-[var(--ac)] shrink-0 animate-pulse" />
+          <span className="font-semibold">{bdTime ? bdTime.date : "BD Time"}</span>
+          <span className="text-[var(--ac)] font-bold">{bdTime ? bdTime.time : "Loading..."}</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--ac)]/15 text-[var(--ac)] font-sans font-semibold uppercase">
+            BST
+          </span>
+        </div>
+
+        {/* Workday Simulation Schedule Clock */}
+        <div
+          className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--bg)] border border-[var(--bd)] text-[var(--tx)] font-mono tracking-tight text-xs text-[var(--mu)]"
+          title="Simulated Workday Schedule (9:00 AM – 3:00 PM)"
+        >
+          <span className="text-[10px] uppercase font-sans font-semibold text-[var(--mu)]">Sim:</span>
+          <b className="text-[var(--tx)] font-semibold">{formatTimeStr(t)}</b>
         </div>
 
         {/* Pause / Resume Button */}
