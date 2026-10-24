@@ -1,21 +1,15 @@
 "use client";
 
 import React from "react";
-import { useSimulation, formatNum } from "../../context/SimulationContext";
+import { useSimulation, calculateRoomMetrics, formatNum } from "../../context/SimulationContext";
 import { Leaf, ShieldCheck, Globe, Info } from "lucide-react";
 
 export default function CarbonPage() {
   const {
     rooms,
     settings,
-    getRoomMetrics,
-    totalSmartCo2Kg,
-    totalSavedCo2Kg,
-    savingsPercent,
-    totalNormalEnergyKwh,
+    totals,
   } = useSimulation();
-
-  const totalNormalCo2Kg = totalNormalEnergyKwh * settings.ef;
 
   return (
     <main className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-6">
@@ -30,20 +24,28 @@ export default function CarbonPage() {
         </p>
       </div>
 
-      {/* Aggregate KPIs */}
+      {/* Honesty & Transparency Notice */}
+      <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--pn)] border border-[var(--bd)] text-xs text-[var(--mu)]">
+        <Info className="w-4 h-4 text-[var(--ac)] shrink-0" />
+        <span>
+          <strong className="text-[var(--tx)]">Simulation Prototype:</strong> Simulated estimates based on assumed AC power, tariff (৳{settings.tariff}/kWh) and emission factor ({settings.ef} kg CO₂e/kWh). Not measured savings.
+        </span>
+      </div>
+
+      {/* Aggregate KPIs (Single Source of Truth from totals) */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="smart-card space-y-1">
           <span className="text-xs text-[var(--mu)] font-medium">Normal AC emissions</span>
           <b className="text-2xl font-bold text-[var(--bl)] block font-mono">
-            {formatNum(totalNormalCo2Kg)} kg CO₂e
+            {formatNum(totals.totalNormalCo2Kg, 2)} kg CO₂e
           </b>
-          <span className="text-[11px] text-[var(--mu)]">Uncontrolled baseline</span>
+          <span className="text-[11px] text-[var(--mu)]">Always-on baseline</span>
         </div>
 
         <div className="smart-card space-y-1">
           <span className="text-xs text-[var(--mu)] font-medium">Smart AC emissions</span>
           <b className="text-2xl font-bold text-[var(--tx)] block font-mono">
-            {formatNum(totalSmartCo2Kg)} kg CO₂e
+            {formatNum(totals.totalSmartCo2Kg, 2)} kg CO₂e
           </b>
           <span className="text-[11px] text-[var(--mu)]">With vacancy confirmation</span>
         </div>
@@ -51,10 +53,13 @@ export default function CarbonPage() {
         <div className="smart-card space-y-1 border-[var(--ac)]/40 bg-[var(--ac)]/5">
           <span className="text-xs text-[var(--ac)] font-bold">Emissions avoided</span>
           <b className="text-2xl font-bold text-[var(--ac)] block font-mono">
-            {formatNum(totalSavedCo2Kg)} kg CO₂e
+            {formatNum(totals.totalSavedCo2Kg, 2)} kg CO₂e
           </b>
           <span className="text-[11px] text-[var(--ac)] font-semibold">
-            {formatNum(savingsPercent, 1)}% lower emissions
+            {formatNum(totals.savingsPercent, 1)}% simulated reduction
+          </span>
+          <span className="block text-[10px] text-[var(--mu)] mt-0.5">
+            Simulated estimate, not measured
           </span>
         </div>
 
@@ -72,7 +77,7 @@ export default function CarbonPage() {
         <div className="mb-3">
           <h2 className="text-sm font-bold text-[var(--tx)]">Carbon Impact by Room</h2>
           <span className="text-xs text-[var(--mu)]">
-            Avoided CO₂-equivalent emissions breakdown by space
+            Avoided CO₂-equivalent emissions breakdown by space (rows sum exactly to totals)
           </span>
         </div>
 
@@ -89,22 +94,35 @@ export default function CarbonPage() {
             </thead>
             <tbody className="divide-y divide-[var(--bd)] text-[var(--tx)]">
               {rooms.map((r) => {
-                const m = getRoomMetrics(r);
+                const rm = calculateRoomMetrics(r, settings.tariff, settings.ef);
                 return (
                   <tr key={r.id} className="hover:bg-[var(--bg)]/30 transition-colors">
                     <td className="py-3 px-4 font-semibold text-[var(--tx)]">{r.name}</td>
-                    <td className="py-3 px-3 font-mono text-[var(--bl)]">{formatNum(m.on)}</td>
-                    <td className="py-3 px-3 font-mono">{formatNum(m.co2)}</td>
+                    <td className="py-3 px-3 font-mono text-[var(--bl)]">{formatNum(rm.normalCo2, 2)}</td>
+                    <td className="py-3 px-3 font-mono">{formatNum(rm.smartCo2, 2)}</td>
                     <td className="py-3 px-3 font-mono font-bold text-[var(--ac)]">
-                      {formatNum(m.sv * settings.ef)}
+                      {formatNum(rm.savedCo2, 2)}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="badge-ok font-mono">{formatNum(m.pct, 1)}%</span>
+                      <span className="badge-ok font-mono">{formatNum(rm.savingsPercent, 1)}%</span>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-[var(--bd)] bg-[var(--bg)]/70 font-semibold text-[var(--tx)]">
+                <td className="py-3 px-4">Total Facility</td>
+                <td className="py-3 px-3 font-mono text-[var(--bl)]">{formatNum(totals.totalNormalCo2Kg, 2)}</td>
+                <td className="py-3 px-3 font-mono">{formatNum(totals.totalSmartCo2Kg, 2)}</td>
+                <td className="py-3 px-3 font-mono font-bold text-[var(--ac)]">
+                  {formatNum(totals.totalSavedCo2Kg, 2)}
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <span className="badge-ok font-mono">{formatNum(totals.savingsPercent, 1)}%</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>
@@ -118,7 +136,7 @@ export default function CarbonPage() {
         <p>
           Avoided carbon footprint is calculated using the formula:{" "}
           <code className="text-[var(--ac)] font-mono">Avoided CO₂e (kg) = (Baseline kWh − SmartCool kWh) × Emission Factor</code>.
-          The default emission factor of <b>0.696 kg CO₂e/kWh</b> represents an estimated regional electricity grid intensity.
+          The default emission factor of <b>0.696 kg CO₂e/kWh</b> represents an assumed regional electricity grid intensity. Values are simulated estimates, not verified carbon credits.
         </p>
       </section>
     </main>

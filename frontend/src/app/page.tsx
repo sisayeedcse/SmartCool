@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import {
   useSimulation,
+  calculateRoomMetrics,
   formatNum,
   formatDuration,
   formatTimeShort,
@@ -30,6 +31,7 @@ import {
   Activity,
   ChevronRight,
   Radio,
+  Info,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -45,20 +47,8 @@ export default function DashboardPage() {
     toggleAcPower,
     toggleAcMode,
     setRoomForce,
-    getRoomMetrics,
     getRoomPower,
-    totalRooms,
-    occupiedRooms,
-    totalAcs,
-    onAcs,
-    totalPowerKw,
-    totalSmartEnergyKwh,
-    totalNormalEnergyKwh,
-    totalSavedEnergyKwh,
-    totalSmartCostBdt,
-    totalSavedCostBdt,
-    totalSmartCo2Kg,
-    totalSavedCo2Kg,
+    totals,
   } = useSimulation();
 
   // Keyboard navigation shortcuts
@@ -91,7 +81,7 @@ export default function DashboardPage() {
   }, [rooms.length, setIsRunning, setSelectedRoomIdx]);
 
   const r = selectedRoom;
-  const m = getRoomMetrics(r);
+  const rm = calculateRoomMetrics(r, settings.tariff, settings.ef);
   const roomPower = getRoomPower(r);
   const runtimePct = Math.min(100, Math.round((100 * r.run) / (TE - T0)));
 
@@ -110,35 +100,44 @@ export default function DashboardPage() {
 
   return (
     <main className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-5">
-      {/* 1. Global Multi-Room Summary KPIs */}
+      {/* Simulation Transparency & Honesty Banner */}
+      <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--pn)] border border-[var(--bd)] text-xs text-[var(--mu)]">
+        <Info className="w-4 h-4 text-[var(--ac)] shrink-0" />
+        <span>
+          <strong className="text-[var(--tx)]">Simulation Prototype:</strong> Simulated estimates based on assumed AC power (0.8–1.4 kW), tariff (৳{settings.tariff}/kWh) and emission factor ({settings.ef} kg CO₂e/kWh). Not measured savings.
+        </span>
+      </div>
+
+      {/* 1. Global Multi-Room Summary KPIs (Single Source of Truth from totals) */}
       <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <SummaryCard
           title="Rooms"
-          main={`${totalRooms}`}
-          sub={`${occupiedRooms} occupied now`}
-          highlight={occupiedRooms > 0}
+          main={`${totals.totalRooms}`}
+          sub={`${totals.occupiedRooms} occupied now`}
+          highlight={totals.occupiedRooms > 0}
         />
         <SummaryCard
           title="AC units on"
-          main={`${onAcs} / ${totalAcs}`}
-          sub={`${formatNum(totalPowerKw, 2)} kW current draw`}
-          highlight={onAcs > 0}
+          main={`${totals.onAcs} / ${totals.totalAcs}`}
+          sub={`${formatNum(totals.totalPowerKw, 2)} kW current draw`}
+          highlight={totals.onAcs > 0}
         />
         <SummaryCard
           title="Energy today"
-          main={`${formatNum(totalSmartEnergyKwh, 2)} kWh`}
-          sub={`Normal AC: ${formatNum(totalNormalEnergyKwh, 2)} kWh`}
+          main={`${formatNum(totals.totalSmartEnergyKwh, 2)} kWh`}
+          sub={`Normal AC: ${formatNum(totals.totalNormalEnergyKwh, 2)} kWh`}
         />
         <SummaryCard
           title="Cost today"
-          main={`৳ ${formatNum(totalSmartCostBdt, 2)}`}
-          sub={`Saved ৳ ${formatNum(totalSavedCostBdt, 2)}`}
-          badge={`-${formatNum(m.pct, 0)}%`}
+          main={`৳ ${formatNum(totals.totalSmartCostBdt, 2)}`}
+          sub={`Saved ৳ ${formatNum(totals.totalSavedCostBdt, 2)}`}
+          badge={`-${formatNum(totals.savingsPercent, 1)}%`}
+          badgeSub="Simulated reduction"
         />
         <SummaryCard
           title="CO₂e today"
-          main={`${formatNum(totalSmartCo2Kg, 2)} kg`}
-          sub={`Avoided ${formatNum(totalSavedCo2Kg, 2)} kg`}
+          main={`${formatNum(totals.totalSmartCo2Kg, 2)} kg`}
+          sub={`Avoided ${formatNum(totals.totalSavedCo2Kg, 2)} kg`}
           highlightGreen
         />
       </section>
@@ -332,7 +331,7 @@ export default function DashboardPage() {
               <h2 className="text-sm font-bold text-[var(--tx)]">
                 Event summary (today) – {r.name}
               </h2>
-              <span className="text-xs text-[var(--mu)]">Cumulative metrics</span>
+              <span className="text-xs text-[var(--mu)]">Simulated metrics</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -356,20 +355,20 @@ export default function DashboardPage() {
               <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
                 <span className="text-xs text-[var(--mu)] block">Energy consumed</span>
                 <b className="text-xl font-bold text-[var(--tx)] block font-mono">
-                  {formatNum(r.e)} kWh
+                  {formatNum(rm.smartKwh, 2)} kWh
                 </b>
-                <DeltaBadge pct={m.pct} />
+                <DeltaBadge pct={rm.savingsPercent} />
                 <span className="text-[11px] text-[var(--mu)] block">
-                  Normal AC: {formatNum(r.en)} kWh
+                  Normal AC: {formatNum(rm.normalKwh, 2)} kWh
                 </span>
               </div>
 
               <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
                 <span className="text-xs text-[var(--mu)] block">Estimated cost</span>
                 <b className="text-xl font-bold text-[var(--tx)] block font-mono">
-                  ৳ {formatNum(m.cost)}
+                  ৳ {formatNum(rm.smartCost, 2)}
                 </b>
-                <DeltaBadge pct={m.pct} />
+                <DeltaBadge pct={rm.savingsPercent} />
                 <span className="text-[11px] text-[var(--mu)] block">
                   at ৳{settings.tariff}/kWh
                 </span>
@@ -378,9 +377,9 @@ export default function DashboardPage() {
               <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
                 <span className="text-xs text-[var(--mu)] block">CO₂e emissions</span>
                 <b className="text-xl font-bold text-[var(--tx)] block font-mono">
-                  {formatNum(m.co2)} kg
+                  {formatNum(rm.smartCo2, 2)} kg
                 </b>
-                <DeltaBadge pct={m.pct} />
+                <DeltaBadge pct={rm.savingsPercent} />
                 <span className="text-[11px] text-[var(--mu)] block">
                   at {settings.ef} kg/kWh
                 </span>
@@ -420,7 +419,7 @@ export default function DashboardPage() {
               Energy Comparison (Cumulative)
             </h3>
             <span className="text-xs font-mono text-[var(--tx)]">
-              {formatNum(r.e)} / {formatNum(r.en)} kWh
+              {formatNum(rm.smartKwh, 2)} / {formatNum(rm.normalKwh, 2)} kWh
             </span>
           </div>
           <EnergyComparisonChart room={r} />
@@ -444,7 +443,7 @@ export default function DashboardPage() {
               Energy & Cost Analysis – {r.name}
             </h3>
             <span className="text-xs text-[var(--ac)] font-semibold">
-              {formatNum(m.pct, 1)}% Energy Reduction
+              {formatNum(rm.savingsPercent, 1)}% Simulated Reduction
             </span>
           </div>
 
@@ -454,8 +453,8 @@ export default function DashboardPage() {
                 Electricity (kWh)
               </span>
               <ComparisonBars
-                normalVal={r.en}
-                smartVal={r.e}
+                normalVal={rm.normalKwh}
+                smartVal={rm.smartKwh}
                 formatDecimals={2}
               />
             </div>
@@ -465,17 +464,17 @@ export default function DashboardPage() {
                 Estimated Cost (৳)
               </span>
               <ComparisonBars
-                normalVal={m.cn}
-                smartVal={m.cost}
+                normalVal={rm.normalCost}
+                smartVal={rm.smartCost}
                 formatDecimals={2}
               />
             </div>
 
             <SavingsCard
-              savedKwh={m.sv}
-              savedPct={m.pct}
-              savedCostBdt={m.sv * settings.tariff}
-              avoidedCo2Kg={m.sv * settings.ef}
+              savedKwh={rm.savedKwh}
+              savedPct={rm.savingsPercent}
+              savedCostBdt={rm.savedCost}
+              avoidedCo2Kg={rm.savedCo2}
               tariff={settings.tariff}
               ef={settings.ef}
             />
@@ -537,13 +536,13 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      {/* Footer disclaimer note (from reference HTML) */}
+      {/* Footer disclaimer note */}
       <footer className="pt-4 border-t border-[var(--bd)] text-xs text-[var(--mu)] flex flex-wrap gap-4 items-center justify-between">
         <span>
-          Note: This dashboard shows data from a simulated multi-room environment. Actual energy use and emissions vary with real AC specifications and conditions.
+          Note: This dashboard shows data from a simulated multi-room environment. Simulated estimates based on assumed AC power, tariff and emission factor. Not measured savings.
         </span>
         <span className="font-semibold text-[var(--ac)]">
-          Save energy · Reduce emissions · Build a sustainable future
+          Simulation Prototype · Research & Energy-Efficiency Study
         </span>
       </footer>
     </main>
@@ -557,6 +556,7 @@ function SummaryCard({
   highlight,
   highlightGreen,
   badge,
+  badgeSub,
 }: {
   title: string;
   main: string;
@@ -564,15 +564,19 @@ function SummaryCard({
   highlight?: boolean;
   highlightGreen?: boolean;
   badge?: string;
+  badgeSub?: string;
 }) {
   return (
     <div className="smart-card space-y-1">
       <div className="flex items-center justify-between">
         <span className="text-xs text-[var(--mu)] font-medium">{title}</span>
         {badge && (
-          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[var(--ac)]/15 text-[var(--ac)]">
-            {badge}
-          </span>
+          <div className="text-right">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--ac)]/15 text-[var(--ac)]">
+              {badge}
+            </span>
+            {badgeSub && <span className="block text-[9px] text-[var(--mu)] mt-0.5">{badgeSub}</span>}
+          </div>
         )}
       </div>
       <b

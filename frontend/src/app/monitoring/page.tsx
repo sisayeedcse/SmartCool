@@ -23,7 +23,7 @@ export default function MonitoringPage() {
             Live Data – All Rooms & AC Units
           </h1>
           <p className="text-xs text-[var(--mu)] mt-1">
-            Real-time status, thermal readings, vacancy timers, and individual unit switches.
+            Simulated real-time status, thermal readings, vacancy timers, and individual unit switches.
           </p>
         </div>
 
@@ -66,8 +66,9 @@ export default function MonitoringPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--bd)] text-[var(--tx)]">
-              {filteredRooms.map((r, roomIndex) => {
+              {filteredRooms.map((r) => {
                 const originalRoomIdx = rooms.findIndex((orig) => orig.id === r.id);
+                const displayVac = Math.min(r.vac, settings.vac);
 
                 return r.acs.map((ac, acIdx) => (
                   <tr
@@ -113,7 +114,7 @@ export default function MonitoringPage() {
                       </span>
                     </td>
                     <td className="py-3 px-3 font-mono text-[var(--mu)]">
-                      {String(r.vac).padStart(2, "0")}:00 / {String(settings.vac).padStart(2, "0")}:00
+                      {String(displayVac).padStart(2, "0")}:00 / {String(settings.vac).padStart(2, "0")}:00
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="inline-flex gap-2">
@@ -149,9 +150,9 @@ export default function MonitoringPage() {
       <section className="p-4 rounded-xl bg-amber-900/20 border border-amber-800/40 text-xs text-amber-200/90 flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-semibold text-amber-300">Live Simulation Note</p>
+          <p className="font-semibold text-amber-300">Simulation Prototype Notice</p>
           <p>
-            Data is driven by the internal thermodynamic simulation engine in real-time. Manual controls override automatic schedules until reset or set back to Auto mode.
+            Data is driven by the internal thermodynamic simulation engine in real-time. Simulated estimates based on assumed AC power, tariff and emission factor. Not measured savings.
           </p>
         </div>
       </section>

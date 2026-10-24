@@ -5,6 +5,10 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 export const T0 = 540; // 9:00 AM in minutes
 export const TE = 900; // 3:00 PM in minutes
 
+// Rounding helpers for consistent dashboard presentation
+export const round2 = (val: number): number => Math.round((val + Number.EPSILON) * 100) / 100;
+export const round1 = (val: number): number => Math.round((val + Number.EPSILON) * 10) / 10;
+
 export const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 export const formatNum = (n: number, d = 2) => Number(n).toFixed(d);
 
@@ -60,7 +64,7 @@ export interface Room {
   sk: string; // schedule key 'A' | 'B' | 'C' | 'D'
   occ: boolean;
   force: boolean | null; // null: schedule, true: force occ, false: force vacant
-  vac: number; // vacancy timer in min
+  vac: number; // vacancy timer in min (capped at configured vacancy limit)
   temp: number; // smart temp
   tn: number; // normal temp
   e: number; // smart energy kWh
@@ -71,11 +75,11 @@ export interface Room {
 }
 
 export interface SimulationSettings {
-  tariff: number; // BDT / kWh
-  ef: number; // kg CO2e / kWh
-  vac: number; // vacancy timeout min
-  set: number; // temp setpoint C
-  ms: number; // speed ms/min
+  tariff: number; // BDT / kWh (default: 10)
+  ef: number; // kg CO2e / kWh (default: 0.696)
+  vac: number; // vacancy timeout min (default: 5)
+  set: number; // temp setpoint C (default: 24)
+  ms: number; // speed ms/min (default: 1500)
 }
 
 export interface EventLogEntry {
@@ -86,14 +90,130 @@ export interface EventLogEntry {
   ty: "on" | "off" | "info";
 }
 
-interface RoomMetrics {
-  sv: number; // kWh saved
-  pct: number; // % saved
-  cost: number; // smart cost BDT
-  co2: number; // smart CO2 kg
-  cn: number; // normal cost BDT
-  on: number; // normal CO2 kg
+// Single shared source of truth for individual room metrics
+export interface RoomMetrics {
+  normalKwh: number;      // Normal baseline kWh (2 decimals)
+  smartKwh: number;       // Smart AC kWh (2 decimals)
+  savedKwh: number;       // normalKwh - smartKwh (2 decimals)
+  savingsPercent: number; // (savedKwh / normalKwh) * 100 (1 decimal)
+  normalCost: number;     // normalKwh * tariff (2 decimals)
+  smartCost: number;      // smartKwh * tariff (2 decimals)
+  savedCost: number;      // savedKwh * tariff (2 decimals)
+  normalCo2: number;      // normalKwh * ef (2 decimals)
+  smartCo2: number;       // smartKwh * ef (2 decimals)
+  savedCo2: number;       // savedKwh * ef (2 decimals)
+
+  // Backward compatibility aliases
+  sv: number;             // savedKwh
+  pct: number;            // savingsPercent
+  cost: number;           // smartCost
+  co2: number;            // smartCo2
+  cn: number;             // normalCost
+  on: number;             // normalCo2
 }
+
+// Single shared source of truth for facility-wide aggregate metrics
+export interface FacilityTotals {
+  totalRooms: number;
+  occupiedRooms: number;
+  totalAcs: number;
+  onAcs: number;
+  totalPowerKw: number;
+  totalNormalEnergyKwh: number; // Exact sum of all room normalKwh (2 decimals)
+  totalSmartEnergyKwh: number;  // Exact sum of all room smartKwh (2 decimals)
+  totalSavedEnergyKwh: number;  // totalNormalEnergyKwh - totalSmartEnergyKwh (2 decimals)
+  savingsPercent: number;       // (totalSavedEnergyKwh / totalNormalEnergyKwh) * 100 (1 decimal)
+  totalNormalCostBdt: number;   // totalNormalEnergyKwh * tariff (2 decimals)
+  totalSmartCostBdt: number;    // totalSmartEnergyKwh * tariff (2 decimals)
+  totalSavedCostBdt: number;    // totalSavedEnergyKwh * tariff (2 decimals)
+  totalNormalCo2Kg: number;     // totalNormalEnergyKwh * ef (2 decimals)
+  totalSmartCo2Kg: number;      // totalSmartEnergyKwh * ef (2 decimals)
+  totalSavedCo2Kg: number;      // totalSavedEnergyKwh * ef (2 decimals)
+}
+
+// Single calculation helper for a single room
+export function calculateRoomMetrics(r: Room, tariff: number, ef: number): RoomMetrics {
+  const normalKwh = round2(r.en);
+  const smartKwh = round2(r.e);
+  const savedKwh = round2(normalKwh - smartKwh);
+  const savingsPercent = normalKwh > 0 ? round1((savedKwh / normalKwh) * 100) : 0;
+  const normalCost = round2(normalKwh * tariff);
+  const smartCost = round2(smartKwh * tariff);
+  const savedCost = round2(savedKwh * tariff);
+  const normalCo2 = round2(normalKwh * ef);
+  const smartCo2 = round2(smartKwh * ef);
+  const savedCo2 = round2(savedKwh * ef);
+
+  return {
+    normalKwh,
+    smartKwh,
+    savedKwh,
+    savingsPercent,
+    normalCost,
+    smartCost,
+    savedCost,
+    normalCo2,
+    smartCo2,
+    savedCo2,
+    // Aliases
+    sv: savedKwh,
+    pct: savingsPercent,
+    cost: smartCost,
+    co2: smartCo2,
+    cn: normalCost,
+    on: normalCo2,
+  };
+}
+
+// Single calculation helper for facility-wide totals, guaranteeing that totals equal the sum of room rows
+export function calculateFacilityTotals(rooms: Room[], tariff: number, ef: number): FacilityTotals {
+  const roomMetrics = rooms.map((r) => calculateRoomMetrics(r, tariff, ef));
+
+  const totalRooms = rooms.length;
+  const occupiedRooms = rooms.filter((r) => r.occ).length;
+  const totalAcs = rooms.reduce((s, r) => s + r.acs.length, 0);
+  const onAcs = rooms.reduce((s, r) => s + r.acs.filter((a) => a.on).length, 0);
+  const totalPowerKw = round2(rooms.reduce((s, r) => s + r.acs.reduce((pSum, a) => pSum + a.p, 0), 0));
+
+  const totalNormalEnergyKwh = round2(roomMetrics.reduce((s, m) => s + m.normalKwh, 0));
+  const totalSmartEnergyKwh = round2(roomMetrics.reduce((s, m) => s + m.smartKwh, 0));
+  const totalSavedEnergyKwh = round2(totalNormalEnergyKwh - totalSmartEnergyKwh);
+  const savingsPercent = totalNormalEnergyKwh > 0 ? round1((totalSavedEnergyKwh / totalNormalEnergyKwh) * 100) : 0;
+
+  const totalNormalCostBdt = round2(totalNormalEnergyKwh * tariff);
+  const totalSmartCostBdt = round2(totalSmartEnergyKwh * tariff);
+  const totalSavedCostBdt = round2(totalSavedEnergyKwh * tariff);
+
+  const totalNormalCo2Kg = round2(totalNormalEnergyKwh * ef);
+  const totalSmartCo2Kg = round2(totalSmartEnergyKwh * ef);
+  const totalSavedCo2Kg = round2(totalSavedEnergyKwh * ef);
+
+  return {
+    totalRooms,
+    occupiedRooms,
+    totalAcs,
+    onAcs,
+    totalPowerKw,
+    totalNormalEnergyKwh,
+    totalSmartEnergyKwh,
+    totalSavedEnergyKwh,
+    savingsPercent,
+    totalNormalCostBdt,
+    totalSmartCostBdt,
+    totalSavedCostBdt,
+    totalNormalCo2Kg,
+    totalSmartCo2Kg,
+    totalSavedCo2Kg,
+  };
+}
+
+export const DEFAULT_SETTINGS: SimulationSettings = {
+  tariff: 10,
+  ef: 0.696,
+  vac: 5,
+  set: 24,
+  ms: 1500,
+};
 
 interface SimulationContextType {
   t: number;
@@ -122,7 +242,11 @@ interface SimulationContextType {
   getRoomMetrics: (r: Room) => RoomMetrics;
   getRoomPower: (r: Room) => number;
   getRoomMode: (r: Room) => "auto" | "manual";
-  // Global aggregate metrics
+
+  // Facility-wide totals and metrics from the single source of truth
+  totals: FacilityTotals;
+
+  // Flattened total fields for direct consumption
   totalRooms: number;
   occupiedRooms: number;
   totalAcs: number;
@@ -137,14 +261,6 @@ interface SimulationContextType {
   totalSmartCo2Kg: number;
   totalSavedCo2Kg: number;
 }
-
-const DEFAULT_SETTINGS: SimulationSettings = {
-  tariff: 10,
-  ef: 0.696,
-  vac: 5,
-  set: 24,
-  ms: 1500,
-};
 
 function createInitialRoom(id: string, name: string, nAcs: number, sk: string, targetTime: number, settings: SimulationSettings, logEvent: (entry: EventLogEntry) => void): Room {
   const r: Room = {
@@ -175,12 +291,20 @@ function createInitialRoom(id: string, name: string, nAcs: number, sk: string, t
   return r;
 }
 
-function stepRoom(r: Room, currentMin: number, settings: SimulationSettings, logEvent: (entry: EventLogEntry) => void) {
+export function stepRoom(r: Room, currentMin: number, settings: SimulationSettings, logEvent: (entry: EventLogEntry) => void) {
   const was = r.occ;
   const schedule = SCHEDULES[r.sk] || SCHEDULES.A;
   const n = r.force != null ? r.force : schedule.some(([a, b]) => currentMin >= a && currentMin < b);
   r.occ = n;
-  r.vac = n ? 0 : r.vac + 1;
+
+  // Vacancy timer logic:
+  // - If motion detected (n is true), timer immediately resets to 0.
+  // - If empty (n is false), timer increments up to configured vacancy timeout, never exceeding it.
+  if (n) {
+    r.vac = 0;
+  } else {
+    r.vac = Math.min(settings.vac, r.vac + 1);
+  }
 
   let turnedOnCount = 0;
   r.acs.forEach((a) => {
@@ -431,6 +555,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         return {
           ...r,
           force: null,
+          vac: 0,
           acs: r.acs.map((a) => ({ ...a, mode: "auto" })),
         };
       });
@@ -497,13 +622,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const getRoomMetrics = useCallback((r: Room): RoomMetrics => {
-    const sv = r.en - r.e;
-    const pct = r.en > 0 ? (100 * sv) / r.en : 0;
-    const cost = r.e * settings.tariff;
-    const co2 = r.e * settings.ef;
-    const cn = r.en * settings.tariff;
-    const on = r.en * settings.ef;
-    return { sv, pct, cost, co2, cn, on };
+    return calculateRoomMetrics(r, settings.tariff, settings.ef);
   }, [settings]);
 
   const getRoomPower = useCallback((r: Room): number => {
@@ -516,20 +635,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
 
   const selectedRoom = rooms[selectedRoomIdx] || rooms[0];
 
-  // Aggregates
-  const totalRooms = rooms.length;
-  const occupiedRooms = rooms.filter((r) => r.occ).length;
-  const totalAcs = rooms.reduce((s, r) => s + r.acs.length, 0);
-  const onAcs = rooms.reduce((s, r) => s + r.acs.filter((a) => a.on).length, 0);
-  const totalPowerKw = rooms.reduce((s, r) => s + getRoomPower(r), 0);
-  const totalSmartEnergyKwh = rooms.reduce((s, r) => s + r.e, 0);
-  const totalNormalEnergyKwh = rooms.reduce((s, r) => s + r.en, 0);
-  const totalSavedEnergyKwh = totalNormalEnergyKwh - totalSmartEnergyKwh;
-  const savingsPercent = totalNormalEnergyKwh > 0 ? (100 * totalSavedEnergyKwh) / totalNormalEnergyKwh : 0;
-  const totalSmartCostBdt = totalSmartEnergyKwh * settings.tariff;
-  const totalSavedCostBdt = totalSavedEnergyKwh * settings.tariff;
-  const totalSmartCo2Kg = totalSmartEnergyKwh * settings.ef;
-  const totalSavedCo2Kg = totalSavedEnergyKwh * settings.ef;
+  // Single shared source of truth for facility-wide totals
+  const totals = calculateFacilityTotals(rooms, settings.tariff, settings.ef);
 
   return (
     <SimulationContext.Provider
@@ -560,19 +667,20 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         getRoomMetrics,
         getRoomPower,
         getRoomMode,
-        totalRooms,
-        occupiedRooms,
-        totalAcs,
-        onAcs,
-        totalPowerKw,
-        totalSmartEnergyKwh,
-        totalNormalEnergyKwh,
-        totalSavedEnergyKwh,
-        savingsPercent,
-        totalSmartCostBdt,
-        totalSavedCostBdt,
-        totalSmartCo2Kg,
-        totalSavedCo2Kg,
+        totals,
+        totalRooms: totals.totalRooms,
+        occupiedRooms: totals.occupiedRooms,
+        totalAcs: totals.totalAcs,
+        onAcs: totals.onAcs,
+        totalPowerKw: totals.totalPowerKw,
+        totalSmartEnergyKwh: totals.totalSmartEnergyKwh,
+        totalNormalEnergyKwh: totals.totalNormalEnergyKwh,
+        totalSavedEnergyKwh: totals.totalSavedEnergyKwh,
+        savingsPercent: totals.savingsPercent,
+        totalSmartCostBdt: totals.totalSmartCostBdt,
+        totalSavedCostBdt: totals.totalSavedCostBdt,
+        totalSmartCo2Kg: totals.totalSmartCo2Kg,
+        totalSavedCo2Kg: totals.totalSavedCo2Kg,
       }}
     >
       {children}

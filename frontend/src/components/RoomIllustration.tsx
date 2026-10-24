@@ -12,8 +12,9 @@ export default function RoomIllustration({ room }: RoomIllustrationProps) {
   const isAcOn = room.acs.some((a) => a.on);
   const mode = getRoomMode(room);
 
-  // Pad vacancy timer string
-  const vacMins = String(room.vac).padStart(2, "0");
+  // Clamped vacancy minutes ensure elapsed vacancy time never exceeds the configured delay limit in the display
+  const displayVac = Math.min(room.vac, settings.vac);
+  const vacMins = String(displayVac).padStart(2, "0");
   const limitMins = String(settings.vac).padStart(2, "0");
 
   return (

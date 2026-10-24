@@ -1,20 +1,14 @@
 "use client";
 
 import React from "react";
-import { useSimulation, formatNum } from "../../context/SimulationContext";
-import { BarChart3, TrendingDown, DollarSign, Zap } from "lucide-react";
+import { useSimulation, calculateRoomMetrics, formatNum } from "../../context/SimulationContext";
+import { BarChart3, TrendingDown, DollarSign, Zap, Info } from "lucide-react";
 
 export default function AnalyticsPage() {
   const {
     rooms,
     settings,
-    getRoomMetrics,
-    totalSmartEnergyKwh,
-    totalNormalEnergyKwh,
-    totalSavedEnergyKwh,
-    savingsPercent,
-    totalSmartCostBdt,
-    totalSavedCostBdt,
+    totals,
   } = useSimulation();
 
   // Find maximum normal energy across rooms for normalized bars
@@ -33,40 +27,53 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
-      {/* Aggregate KPIs */}
+      {/* Honesty & Simulation Transparency Note */}
+      <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--pn)] border border-[var(--bd)] text-xs text-[var(--mu)]">
+        <Info className="w-4 h-4 text-[var(--ac)] shrink-0" />
+        <span>
+          <strong className="text-[var(--tx)]">Simulation Prototype:</strong> Simulated estimates based on assumed AC power, tariff (৳{settings.tariff}/kWh) and emission factor ({settings.ef} kg CO₂e/kWh). Not measured savings.
+        </span>
+      </div>
+
+      {/* Aggregate KPIs (Single Source of Truth from totals) */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="smart-card space-y-1">
           <span className="text-xs text-[var(--mu)] font-medium">Smart AC energy</span>
           <b className="text-2xl font-bold text-[var(--ac)] block font-mono">
-            {formatNum(totalSmartEnergyKwh)} kWh
+            {formatNum(totals.totalSmartEnergyKwh, 2)} kWh
           </b>
-          <span className="text-[11px] text-[var(--mu)]">Actual simulation total</span>
+          <span className="text-[11px] text-[var(--mu)]">Simulated total</span>
         </div>
 
         <div className="smart-card space-y-1">
           <span className="text-xs text-[var(--mu)] font-medium">Normal AC energy</span>
           <b className="text-2xl font-bold text-[var(--bl)] block font-mono">
-            {formatNum(totalNormalEnergyKwh)} kWh
+            {formatNum(totals.totalNormalEnergyKwh, 2)} kWh
           </b>
-          <span className="text-[11px] text-[var(--mu)]">Always-on baseline</span>
+          <span className="text-[11px] text-[var(--mu)]">
+            Always-on baseline (all ACs continuously ON)
+          </span>
         </div>
 
         <div className="smart-card space-y-1">
           <span className="text-xs text-[var(--mu)] font-medium">Smart AC cost</span>
           <b className="text-2xl font-bold text-[var(--tx)] block font-mono">
-            ৳ {formatNum(totalSmartCostBdt)}
+            ৳ {formatNum(totals.totalSmartCostBdt, 2)}
           </b>
           <span className="text-[11px] text-[var(--mu)]">at ৳{settings.tariff}/kWh</span>
         </div>
 
-        <div className="smart-card space-y-1 border-[var(--ac)]/30">
+        <div className="smart-card space-y-1 border-[var(--ac)]/30 bg-[var(--ac)]/5">
           <span className="text-xs text-[var(--mu)] font-medium">Cost saved</span>
           <b className="text-2xl font-bold text-[var(--ac)] block font-mono">
-            ৳ {formatNum(totalSavedCostBdt)}
+            ৳ {formatNum(totals.totalSavedCostBdt, 2)}
           </b>
           <span className="text-[11px] text-[var(--ac)] font-semibold flex items-center gap-1">
             <TrendingDown className="w-3.5 h-3.5" />
-            {formatNum(savingsPercent, 1)}% less expenditure
+            {formatNum(totals.savingsPercent, 1)}% simulated reduction
+          </span>
+          <span className="block text-[10px] text-[var(--mu)] mt-0.5">
+            Simulated estimate, not measured
           </span>
         </div>
       </section>
@@ -76,7 +83,7 @@ export default function AnalyticsPage() {
         <div className="mb-3">
           <h2 className="text-sm font-bold text-[var(--tx)]">Energy & Cost by Room</h2>
           <span className="text-xs text-[var(--mu)]">
-            Individual room contribution to facility savings
+            Individual room contribution to facility savings (rows sum exactly to totals above)
           </span>
         </div>
 
@@ -97,26 +104,43 @@ export default function AnalyticsPage() {
             </thead>
             <tbody className="divide-y divide-[var(--bd)] text-[var(--tx)]">
               {rooms.map((r) => {
-                const m = getRoomMetrics(r);
+                const rm = calculateRoomMetrics(r, settings.tariff, settings.ef);
                 return (
                   <tr key={r.id} className="hover:bg-[var(--bg)]/30 transition-colors">
                     <td className="py-3 px-4 font-semibold text-[var(--tx)]">{r.name}</td>
                     <td className="py-3 px-3 font-mono">{r.acs.length}</td>
-                    <td className="py-3 px-3 font-mono text-[var(--bl)]">{formatNum(r.en)}</td>
-                    <td className="py-3 px-3 font-mono text-[var(--ac)]">{formatNum(r.e)}</td>
-                    <td className="py-3 px-3 font-mono font-bold">{formatNum(m.sv)}</td>
+                    <td className="py-3 px-3 font-mono text-[var(--bl)]">{formatNum(rm.normalKwh, 2)}</td>
+                    <td className="py-3 px-3 font-mono text-[var(--ac)]">{formatNum(rm.smartKwh, 2)}</td>
+                    <td className="py-3 px-3 font-mono font-bold">{formatNum(rm.savedKwh, 2)}</td>
                     <td className="py-3 px-3">
-                      <span className="badge-ok font-mono">{formatNum(m.pct, 1)}%</span>
+                      <span className="badge-ok font-mono">{formatNum(rm.savingsPercent, 1)}%</span>
                     </td>
-                    <td className="py-3 px-3 font-mono text-[var(--mu)]">৳ {formatNum(m.cn)}</td>
-                    <td className="py-3 px-3 font-mono">৳ {formatNum(m.cost)}</td>
+                    <td className="py-3 px-3 font-mono text-[var(--mu)]">৳ {formatNum(rm.normalCost, 2)}</td>
+                    <td className="py-3 px-3 font-mono">৳ {formatNum(rm.smartCost, 2)}</td>
                     <td className="py-3 px-4 font-mono font-bold text-[var(--ac)] text-right">
-                      ৳ {formatNum(m.sv * settings.tariff)}
+                      ৳ {formatNum(rm.savedCost, 2)}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-[var(--bd)] bg-[var(--bg)]/70 font-semibold text-[var(--tx)]">
+                <td className="py-3 px-4">Total Facility</td>
+                <td className="py-3 px-3 font-mono">{totals.totalAcs}</td>
+                <td className="py-3 px-3 font-mono text-[var(--bl)]">{formatNum(totals.totalNormalEnergyKwh, 2)}</td>
+                <td className="py-3 px-3 font-mono text-[var(--ac)]">{formatNum(totals.totalSmartEnergyKwh, 2)}</td>
+                <td className="py-3 px-3 font-mono font-bold">{formatNum(totals.totalSavedEnergyKwh, 2)}</td>
+                <td className="py-3 px-3">
+                  <span className="badge-ok font-mono">{formatNum(totals.savingsPercent, 1)}%</span>
+                </td>
+                <td className="py-3 px-3 font-mono text-[var(--mu)]">৳ {formatNum(totals.totalNormalCostBdt, 2)}</td>
+                <td className="py-3 px-3 font-mono">৳ {formatNum(totals.totalSmartCostBdt, 2)}</td>
+                <td className="py-3 px-4 font-mono font-bold text-[var(--ac)] text-right">
+                  ৳ {formatNum(totals.totalSavedCostBdt, 2)}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>
@@ -124,9 +148,14 @@ export default function AnalyticsPage() {
       {/* Comparative Progress Bars */}
       <section className="smart-card space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[var(--tx)]">
-            Smart vs Normal Energy per Room
-          </h2>
+          <div>
+            <h2 className="text-sm font-bold text-[var(--tx)]">
+              Smart vs Normal Energy per Room
+            </h2>
+            <span className="text-xs text-[var(--mu)]">
+              Baseline assumes all AC units continuously powered without occupancy control
+            </span>
+          </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1.5 text-[var(--bl)]">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--bl)]" />
@@ -141,8 +170,9 @@ export default function AnalyticsPage() {
 
         <div className="space-y-3">
           {rooms.map((r) => {
-            const normalWidth = (r.en / maxRoomEnergy) * 100;
-            const smartWidth = (r.e / maxRoomEnergy) * 100;
+            const rm = calculateRoomMetrics(r, settings.tariff, settings.ef);
+            const normalWidth = (rm.normalKwh / maxRoomEnergy) * 100;
+            const smartWidth = (rm.smartKwh / maxRoomEnergy) * 100;
 
             return (
               <div
@@ -169,8 +199,8 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="text-right font-mono text-[11px] text-[var(--mu)]">
-                  <span className="text-[var(--bl)] font-semibold">{formatNum(r.en, 1)}</span> /{" "}
-                  <span className="text-[var(--ac)] font-semibold">{formatNum(r.e, 1)}</span> kWh
+                  <span className="text-[var(--bl)] font-semibold">{formatNum(rm.normalKwh, 2)}</span> /{" "}
+                  <span className="text-[var(--ac)] font-semibold">{formatNum(rm.smartKwh, 2)}</span> kWh
                 </div>
               </div>
             );
