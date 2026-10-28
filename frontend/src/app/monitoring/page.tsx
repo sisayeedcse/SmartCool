@@ -16,10 +16,10 @@ export default function MonitoringPage() {
   return (
     <main className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <section className="flex flex-wrap items-center justify-between gap-4">
+      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--tx)] flex items-center gap-2">
-            <Waves className="w-6 h-6 text-[var(--ac)]" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--tx)] flex items-center gap-2">
+            <Waves className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--ac)]" />
             Live Data – All Rooms & AC Units
           </h1>
           <p className="text-xs text-[var(--mu)] mt-1">
@@ -28,7 +28,7 @@ export default function MonitoringPage() {
         </div>
 
         {/* Room Filter Dropdown */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <label htmlFor="room-filter" className="text-xs text-[var(--mu)] font-medium">
             Filter Room:
           </label>
@@ -50,8 +50,8 @@ export default function MonitoringPage() {
 
       {/* Main Table Card */}
       <section className="smart-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <table className="w-full min-w-[760px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--bd)] bg-[var(--bg)]/50 text-[var(--mu)] uppercase tracking-wider font-semibold">
                 <th className="py-3 px-4">Room</th>

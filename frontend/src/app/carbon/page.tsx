@@ -33,39 +33,39 @@ export default function CarbonPage() {
       </div>
 
       {/* Aggregate KPIs (Single Source of Truth from totals) */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        <div className="smart-card space-y-1">
-          <span className="text-xs text-[var(--mu)] font-medium">Normal AC emissions</span>
-          <b className="text-2xl font-bold text-[var(--bl)] block font-mono">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+        <div className="smart-card space-y-1 p-3 sm:p-4">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Normal AC emissions</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--bl)] block font-mono">
             {formatNum(totals.totalNormalCo2Kg, 2)} kg CO₂e
           </b>
-          <span className="text-[11px] text-[var(--mu)]">Always-on baseline</span>
+          <span className="text-[10px] sm:text-[11px] text-[var(--mu)]">Always-on baseline</span>
         </div>
 
-        <div className="smart-card space-y-1">
-          <span className="text-xs text-[var(--mu)] font-medium">Smart AC emissions</span>
-          <b className="text-2xl font-bold text-[var(--tx)] block font-mono">
+        <div className="smart-card space-y-1 p-3 sm:p-4">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Smart AC emissions</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--tx)] block font-mono">
             {formatNum(totals.totalSmartCo2Kg, 2)} kg CO₂e
           </b>
-          <span className="text-[11px] text-[var(--mu)]">With vacancy confirmation</span>
+          <span className="text-[10px] sm:text-[11px] text-[var(--mu)]">With vacancy confirmation</span>
         </div>
 
-        <div className="smart-card space-y-1 border-[var(--ac)]/40 bg-[var(--ac)]/5">
-          <span className="text-xs text-[var(--ac)] font-bold">Emissions avoided</span>
-          <b className="text-2xl font-bold text-[var(--ac)] block font-mono">
+        <div className="smart-card space-y-1 p-3 sm:p-4 border-[var(--ac)]/40 bg-[var(--ac)]/5">
+          <span className="text-[11px] sm:text-xs text-[var(--ac)] font-bold">Emissions avoided</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--ac)] block font-mono">
             {formatNum(totals.totalSavedCo2Kg, 2)} kg CO₂e
           </b>
-          <span className="text-[11px] text-[var(--ac)] font-semibold">
-            {formatNum(totals.savingsPercent, 1)}% simulated reduction
+          <span className="text-[10px] sm:text-[11px] text-[var(--ac)] font-semibold">
+            {formatNum(totals.savingsPercent, 1)}% reduction
           </span>
-          <span className="block text-[10px] text-[var(--mu)] mt-0.5">
+          <span className="block text-[9px] sm:text-[10px] text-[var(--mu)] mt-0.5 truncate">
             Simulated estimate, not measured
           </span>
         </div>
 
-        <div className="smart-card space-y-1">
-          <span className="text-xs text-[var(--mu)] font-medium">Emission factor</span>
-          <b className="text-2xl font-bold text-[var(--tx)] block font-mono">
+        <div className="smart-card space-y-1 p-3 sm:p-4">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Emission factor</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--tx)] block font-mono">
             {settings.ef} kg/kWh
           </b>
           <span className="text-[11px] text-[var(--mu)]">Configurable in Settings</span>
@@ -81,8 +81,8 @@ export default function CarbonPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <table className="w-full min-w-[500px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--bd)] bg-[var(--bg)]/50 text-[var(--mu)] uppercase tracking-wider font-semibold">
                 <th className="py-3 px-4">Room</th>

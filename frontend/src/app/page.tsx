@@ -109,7 +109,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 1. Global Multi-Room Summary KPIs (Single Source of Truth from totals) */}
-      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
         <SummaryCard
           title="Rooms"
           main={`${totals.totalRooms}`}
@@ -134,12 +134,14 @@ export default function DashboardPage() {
           badge={`-${formatNum(totals.savingsPercent, 1)}%`}
           badgeSub="Simulated reduction"
         />
-        <SummaryCard
-          title="CO₂e today"
-          main={`${formatNum(totals.totalSmartCo2Kg, 2)} kg`}
-          sub={`Avoided ${formatNum(totals.totalSavedCo2Kg, 2)} kg`}
-          highlightGreen
-        />
+        <div className="col-span-2 sm:col-span-1">
+          <SummaryCard
+            title="CO₂e today"
+            main={`${formatNum(totals.totalSmartCo2Kg, 2)} kg`}
+            sub={`Avoided ${formatNum(totals.totalSavedCo2Kg, 2)} kg`}
+            highlightGreen
+          />
+        </div>
       </section>
 
       {/* 2. Room Selection Chips Bar */}
@@ -162,7 +164,7 @@ export default function DashboardPage() {
             {rooms.length} rooms in facility
           </span>
         </div>
-        <div className="flex flex-wrap gap-2.5 pb-1">
+        <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 sm:gap-2.5 pb-1">
           {rooms.map((room, idx) => {
             const isSelected = idx === selectedRoomIdx;
             const onUnits = room.acs.filter((a) => a.on).length;
@@ -172,7 +174,7 @@ export default function DashboardPage() {
               <button
                 key={room.id}
                 onClick={() => setSelectedRoomIdx(idx)}
-                className={`text-left px-3.5 py-2.5 rounded-xl border transition-all flex items-center gap-3 ${
+                className={`text-left px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border transition-all flex items-center gap-2.5 sm:gap-3 ${
                   isSelected
                     ? "bg-[var(--pn)] border-[var(--ac)] shadow-sm ring-1 ring-[var(--ac)]"
                     : "bg-[var(--pn)]/60 border-[var(--bd)] hover:border-[var(--ac)]/50"
@@ -188,9 +190,9 @@ export default function DashboardPage() {
                     {idx + 1}
                   </span>
                 </div>
-                <div>
-                  <div className="font-bold text-xs text-[var(--tx)]">{room.name}</div>
-                  <div className="text-[11px] text-[var(--mu)]">
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-xs text-[var(--tx)] truncate">{room.name}</div>
+                  <div className="text-[10px] sm:text-[11px] text-[var(--mu)] truncate">
                     {onUnits}/{room.acs.length} AC on · {formatNum(pwr, 2)} kW
                   </div>
                 </div>
@@ -567,20 +569,20 @@ function SummaryCard({
   badgeSub?: string;
 }) {
   return (
-    <div className="smart-card space-y-1">
+    <div className="smart-card space-y-1 p-3 sm:p-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-[var(--mu)] font-medium">{title}</span>
+        <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium truncate">{title}</span>
         {badge && (
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--ac)]/15 text-[var(--ac)]">
               {badge}
             </span>
-            {badgeSub && <span className="block text-[9px] text-[var(--mu)] mt-0.5">{badgeSub}</span>}
+            {badgeSub && <span className="block text-[9px] text-[var(--mu)] mt-0.5 hidden xs:block">{badgeSub}</span>}
           </div>
         )}
       </div>
       <b
-        className={`text-2xl font-bold block tracking-tight ${
+        className={`text-lg sm:text-xl lg:text-2xl font-bold block tracking-tight truncate ${
           highlightGreen
             ? "text-[var(--ac)]"
             : highlight
@@ -590,7 +592,7 @@ function SummaryCard({
       >
         {main}
       </b>
-      <span className="text-[11px] text-[var(--mu)] block truncate">{sub}</span>
+      <span className="text-[10px] sm:text-[11px] text-[var(--mu)] block truncate">{sub}</span>
     </div>
   );
 }

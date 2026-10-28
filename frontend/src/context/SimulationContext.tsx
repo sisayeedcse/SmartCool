@@ -243,6 +243,12 @@ interface SimulationContextType {
   getRoomPower: (r: Room) => number;
   getRoomMode: (r: Room) => "auto" | "manual";
 
+  // Mobile menu drawer state
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleMobileMenu: () => void;
+  closeMobileMenu: () => void;
+
   // Facility-wide totals and metrics from the single source of truth
   totals: FacilityTotals;
 
@@ -392,6 +398,10 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [settings, setSettings] = useState<SimulationSettings>(DEFAULT_SETTINGS);
   const [events, setEvents] = useState<EventLogEntry[]>([]);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
+  const toggleMobileMenu = useCallback(() => setMobileMenuOpen((prev) => !prev), []);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
   const eventsRef = useRef<EventLogEntry[]>([]);
   const logEvent = useCallback((entry: EventLogEntry) => {
@@ -654,6 +664,10 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         events,
         theme,
         toggleTheme,
+        mobileMenuOpen,
+        setMobileMenuOpen,
+        toggleMobileMenu,
+        closeMobileMenu,
         toggleAcPower,
         toggleAcMode,
         setRoomMode,

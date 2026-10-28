@@ -18,9 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col antialiased">
         <SimulationProvider>
           <Header />
-          <div className="flex-1 flex min-w-0">
+          <div className="flex-1 flex min-w-0 relative">
             <Sidebar />
-            <div className="flex-1 min-w-0 bg-[var(--bg)] min-h-[calc(100vh-65px)]">
+            <div className="flex-1 min-w-0 bg-[var(--bg)] min-h-[calc(100vh-65px)] pb-16 lg:pb-0">
               {children}
             </div>
           </div>

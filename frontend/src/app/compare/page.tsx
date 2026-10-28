@@ -106,8 +106,8 @@ export default function ComparePage() {
           <span className="text-xs text-[var(--mu)]">Total facility-wide comparison (consistent with Dashboard & Energy & Cost)</span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <table className="w-full min-w-[550px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--bd)] bg-[var(--bg)]/50 text-[var(--mu)] uppercase tracking-wider font-semibold">
                 <th className="py-2.5 px-4">Performance Metric</th>

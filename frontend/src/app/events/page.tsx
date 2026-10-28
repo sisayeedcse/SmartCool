@@ -18,10 +18,10 @@ export default function EventsPage() {
   return (
     <main className="max-w-[1440px] mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--tx)] flex items-center gap-2">
-            <FileText className="w-6 h-6 text-[var(--ac)]" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--tx)] flex items-center gap-2">
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--ac)]" />
             System Event Log
           </h1>
           <p className="text-xs text-[var(--mu)] mt-1">
@@ -30,7 +30,7 @@ export default function EventsPage() {
         </div>
 
         {/* Filter bars */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           <div className="flex items-center gap-2">
             <label htmlFor="filter-room" className="text-xs text-[var(--mu)] font-medium">
               Room:
@@ -39,7 +39,7 @@ export default function EventsPage() {
               id="filter-room"
               value={roomFilter}
               onChange={(e) => setRoomFilter(e.target.value)}
-              className="bg-[var(--pn)] border border-[var(--bd)] text-xs rounded-lg px-3 py-1.5 text-[var(--tx)] focus:outline-none focus:border-[var(--ac)]"
+              className="bg-[var(--pn)] border border-[var(--bd)] text-xs rounded-lg px-2.5 sm:px-3 py-1.5 text-[var(--tx)] focus:outline-none focus:border-[var(--ac)]"
             >
               <option value="all">All rooms ({rooms.length})</option>
               {rooms.map((r) => (
@@ -52,18 +52,18 @@ export default function EventsPage() {
 
           <div className="flex items-center gap-2">
             <label htmlFor="filter-type" className="text-xs text-[var(--mu)] font-medium">
-              Event Type:
+              Event:
             </label>
             <select
               id="filter-type"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-[var(--pn)] border border-[var(--bd)] text-xs rounded-lg px-3 py-1.5 text-[var(--tx)] focus:outline-none focus:border-[var(--ac)]"
+              className="bg-[var(--pn)] border border-[var(--bd)] text-xs rounded-lg px-2.5 sm:px-3 py-1.5 text-[var(--tx)] focus:outline-none focus:border-[var(--ac)]"
             >
               <option value="all">All events</option>
-              <option value="on">AC turned ON / motion</option>
-              <option value="off">AC turned OFF / vacancy</option>
-              <option value="info">Room empty / timers</option>
+              <option value="on">AC ON / motion</option>
+              <option value="off">AC OFF / vacancy</option>
+              <option value="info">Timer / status</option>
             </select>
           </div>
         </div>
@@ -71,11 +71,11 @@ export default function EventsPage() {
 
       {/* Events Table */}
       <section className="smart-card overflow-hidden">
-        <div className="flex items-center justify-between mb-3 border-b border-[var(--bd)] pb-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b border-[var(--bd)] pb-2.5">
           <span className="text-xs font-semibold text-[var(--mu)] uppercase tracking-wider">
             Showing {filteredEvents.length} Recorded Events
           </span>
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs">
             <span className="flex items-center gap-1.5 text-[var(--mu)]">
               <span className="w-2 h-2 rounded-full bg-[var(--ac)]" /> AC ON / Motion
             </span>
@@ -88,8 +88,8 @@ export default function EventsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-1 sm:mx-0 max-h-[600px] overflow-y-auto">
+          <table className="w-full min-w-[500px] text-left text-xs border-collapse">
             <thead className="sticky top-0 bg-[var(--pn)] border-b border-[var(--bd)] z-10">
               <tr className="text-[var(--mu)] uppercase tracking-wider font-semibold">
                 <th className="py-2.5 px-4 w-36">Time</th>

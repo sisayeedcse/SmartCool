@@ -36,43 +36,43 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Aggregate KPIs (Single Source of Truth from totals) */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        <div className="smart-card space-y-1">
-          <span className="text-xs text-[var(--mu)] font-medium">Smart AC energy</span>
-          <b className="text-2xl font-bold text-[var(--ac)] block font-mono">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+        <div className="smart-card space-y-1 p-3 sm:p-4">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Smart AC energy</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--ac)] block font-mono">
             {formatNum(totals.totalSmartEnergyKwh, 2)} kWh
           </b>
-          <span className="text-[11px] text-[var(--mu)]">Simulated total</span>
+          <span className="text-[10px] sm:text-[11px] text-[var(--mu)]">Simulated total</span>
         </div>
 
-        <div className="smart-card space-y-1">
-          <span className="text-xs text-[var(--mu)] font-medium">Normal AC energy</span>
-          <b className="text-2xl font-bold text-[var(--bl)] block font-mono">
+        <div className="smart-card space-y-1 p-3 sm:p-4">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Normal AC energy</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--bl)] block font-mono">
             {formatNum(totals.totalNormalEnergyKwh, 2)} kWh
           </b>
-          <span className="text-[11px] text-[var(--mu)]">
-            Always-on baseline (all ACs continuously ON)
+          <span className="text-[10px] sm:text-[11px] text-[var(--mu)] truncate block">
+            Always-on baseline
           </span>
         </div>
 
-        <div className="smart-card space-y-1">
-          <span className="text-xs text-[var(--mu)] font-medium">Smart AC cost</span>
-          <b className="text-2xl font-bold text-[var(--tx)] block font-mono">
+        <div className="smart-card space-y-1 p-3 sm:p-4">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Smart AC cost</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--tx)] block font-mono">
             ৳ {formatNum(totals.totalSmartCostBdt, 2)}
           </b>
-          <span className="text-[11px] text-[var(--mu)]">at ৳{settings.tariff}/kWh</span>
+          <span className="text-[10px] sm:text-[11px] text-[var(--mu)]">at ৳{settings.tariff}/kWh</span>
         </div>
 
-        <div className="smart-card space-y-1 border-[var(--ac)]/30 bg-[var(--ac)]/5">
-          <span className="text-xs text-[var(--mu)] font-medium">Cost saved</span>
-          <b className="text-2xl font-bold text-[var(--ac)] block font-mono">
+        <div className="smart-card space-y-1 p-3 sm:p-4 border-[var(--ac)]/30 bg-[var(--ac)]/5">
+          <span className="text-[11px] sm:text-xs text-[var(--mu)] font-medium">Cost saved</span>
+          <b className="text-xl sm:text-2xl font-bold text-[var(--ac)] block font-mono">
             ৳ {formatNum(totals.totalSavedCostBdt, 2)}
           </b>
-          <span className="text-[11px] text-[var(--ac)] font-semibold flex items-center gap-1">
+          <span className="text-[10px] sm:text-[11px] text-[var(--ac)] font-semibold flex items-center gap-1">
             <TrendingDown className="w-3.5 h-3.5" />
-            {formatNum(totals.savingsPercent, 1)}% simulated reduction
+            {formatNum(totals.savingsPercent, 1)}% reduction
           </span>
-          <span className="block text-[10px] text-[var(--mu)] mt-0.5">
+          <span className="block text-[9px] sm:text-[10px] text-[var(--mu)] mt-0.5 truncate">
             Simulated estimate, not measured
           </span>
         </div>
@@ -87,8 +87,8 @@ export default function AnalyticsPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <table className="w-full min-w-[700px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--bd)] bg-[var(--bg)]/50 text-[var(--mu)] uppercase tracking-wider font-semibold">
                 <th className="py-3 px-4">Room</th>
@@ -177,11 +177,17 @@ export default function AnalyticsPage() {
             return (
               <div
                 key={r.id}
-                className="grid grid-cols-[140px_1fr_130px] gap-3 items-center text-xs p-2 rounded-lg bg-[var(--bg)] border border-[var(--bd)]"
+                className="flex flex-col sm:grid sm:grid-cols-[140px_1fr_130px] gap-2 sm:gap-3 sm:items-center text-xs p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--bd)]"
               >
-                <span className="font-semibold text-[var(--tx)] truncate">{r.name}</span>
+                <div className="flex items-center justify-between sm:block">
+                  <span className="font-semibold text-[var(--tx)] truncate">{r.name}</span>
+                  <div className="sm:hidden text-right font-mono text-[11px] text-[var(--mu)]">
+                    <span className="text-[var(--bl)] font-semibold">{formatNum(rm.normalKwh, 2)}</span> /{" "}
+                    <span className="text-[var(--ac)] font-semibold">{formatNum(rm.smartKwh, 2)}</span> kWh
+                  </div>
+                </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 w-full">
                   {/* Normal AC bar */}
                   <div className="w-full bg-[var(--pn)] h-2 rounded-full overflow-hidden border border-[var(--bd)]">
                     <div
@@ -198,7 +204,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="text-right font-mono text-[11px] text-[var(--mu)]">
+                <div className="hidden sm:block text-right font-mono text-[11px] text-[var(--mu)]">
                   <span className="text-[var(--bl)] font-semibold">{formatNum(rm.normalKwh, 2)}</span> /{" "}
                   <span className="text-[var(--ac)] font-semibold">{formatNum(rm.smartKwh, 2)}</span> kWh
                 </div>

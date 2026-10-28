@@ -183,8 +183,8 @@ export default function RoomIllustration({ room }: RoomIllustrationProps) {
       </div>
 
       {/* Badges beneath the room */}
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg)] border border-[var(--bd)]">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
+        <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-[var(--bg)] border border-[var(--bd)]">
           <span className="text-[var(--mu)]">Room Mode:</span>
           <b
             className={`font-semibold ${
@@ -195,7 +195,7 @@ export default function RoomIllustration({ room }: RoomIllustrationProps) {
           </b>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg)] border border-[var(--bd)]">
+        <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-[var(--bg)] border border-[var(--bd)]">
           <span className="text-[var(--mu)]">Vacancy Timer:</span>
           <b
             className={`font-mono font-semibold ${

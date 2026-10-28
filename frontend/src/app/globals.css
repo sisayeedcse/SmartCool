@@ -157,4 +157,16 @@
   .animate-airflow {
     animation: cool-airflow 1.8s ease-in-out infinite;
   }
+
+  /* Mobile touch momentum scrolling */
+  .overflow-x-auto, .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS safe area padding for bottom navigation */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .safe-area-pb {
+      padding-bottom: calc(0.375rem + env(safe-area-inset-bottom));
+    }
+  }
 }

@@ -367,14 +367,14 @@ export function ActivityTimeline({ room }: { room: Room }) {
           return (
             <div
               key={idx}
-              className={`grid grid-cols-[88px_1fr_130px] gap-2 items-center text-xs px-2.5 py-1.5 rounded-md transition-all ${
+              className={`grid grid-cols-[74px_1fr_95px] sm:grid-cols-[88px_1fr_130px] gap-1.5 sm:gap-2 items-center text-[11px] sm:text-xs px-2 sm:px-2.5 py-1.5 rounded-md transition-all ${
                 isCurrent
                   ? "bg-[var(--am)]/15 border border-[var(--am)] shadow-xs font-medium"
                   : "bg-[var(--bg)] border border-[var(--bd)]"
               }`}
             >
-              <span className="font-mono text-[var(--mu)]">
-                {formatTimeShort(row.start)} – {formatTimeShort(row.end)}
+              <span className="font-mono text-[var(--mu)] truncate">
+                {formatTimeShort(row.start)}–{formatTimeShort(row.end)}
               </span>
 
               <div className="w-full bg-[var(--bg)]/80 rounded-full h-2 overflow-hidden border border-[var(--bd)]">

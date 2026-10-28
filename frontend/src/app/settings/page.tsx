@@ -300,9 +300,9 @@ function SettingInput({
 }) {
   return (
     <div className="p-3 rounded-lg bg-[var(--bg)] border border-[var(--bd)] space-y-1.5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1">
         <label className="text-xs font-semibold text-[var(--tx)]">{label}</label>
-        <span className="text-xs font-mono font-bold text-[var(--ac)]">
+        <span className="text-xs font-mono font-bold text-[var(--ac)] shrink-0">
           {value} {unit}
         </span>
       </div>
